@@ -1,0 +1,11 @@
+# Abaikan folder hasil compile Maven
+target/
+
+# Abaikan file pengaturan VS Code 
+.vscode/
+.idea/
+*.iml
+
+# Abaikan file log & sampah sistem
+*.log
+.DS_Store
