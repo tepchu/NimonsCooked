@@ -29,6 +29,13 @@ public abstract class Ingredient extends Item implements Preparable {
     }
 
     @Override
+    public void chop() {
+        if (canBeChopped() && state == IngredientState.RAW) {
+            state = IngredientState.CHOPPED;
+        }
+    }
+
+    @Override
     public void cook(){
         if (canBeCooked() && (state == IngredientState.RAW || state == IngredientState.CHOPPED)){
             state = IngredientState.COOKED;
@@ -39,6 +46,15 @@ public abstract class Ingredient extends Item implements Preparable {
     public void burn(){
         state = IngredientState.BURNED;
     }
+
+    @Override
+    public abstract boolean canBeChopped();
+
+    @Override
+    public abstract boolean canBeCooked();
+
+    @Override
+    public abstract boolean canBePlacedOnPlate();
 
     @Override
     public void showItem(){
