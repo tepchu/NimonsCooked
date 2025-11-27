@@ -1,5 +1,7 @@
 package models.item.kitchenutensils;
 
+import models.item.Preparable;
+
 public interface CookingDevice {
     boolean isPortable();
     int capacity();
