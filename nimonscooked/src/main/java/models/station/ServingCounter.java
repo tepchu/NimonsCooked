@@ -20,7 +20,7 @@ public class ServingCounter extends Station {
     public void interact(ChefPlayer chef) {
         if (chef.getInventory() instanceof Plate plate && plate.getDish() != null && plate.isClean()) {
             Dish dish = plate.getDish();
-            int score = stage.validateServe(dish);
+            stage.validateServe(dish);
             // kalau score > 0 berarti order match
             plate.markDirty();
             plate.setDish(null);
