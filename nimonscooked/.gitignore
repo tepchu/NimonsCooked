@@ -1,0 +1,29 @@
+# Abaikan file pengaturan VS Code
+.vscode/
+.idea/
+*.iml
+
+# Abaikan file log & sampah sistem
+*.log
+.DS_Store
+Thumbs.db
+
+# Hasil build & compile
+/build/
+/bin/
+/out/
+*.class
+
+# Intellij idea
+*.iws
+*.ipr
+
+# VSCode
+.settings/
+.classpath
+.project
+.factorypath
+
+# Gradle
+.gradle/
+build/
