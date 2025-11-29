@@ -26,9 +26,17 @@ public class Position {
         this.y = y; 
     }
 
-    public boolean equals(Position p) {
-        if (p == null) return false;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Position)) return false;
+        Position p = (Position) obj;
         return this.x == p.x && this.y == p.y;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * x + y;
     }
 
     @Override
