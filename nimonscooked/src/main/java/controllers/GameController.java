@@ -1,5 +1,7 @@
 package controllers;
 
+import models.level.Level;
+import models.level.LevelManager;
 import models.map.*;
 import models.player.ChefPlayer;
 import models.core.Position;
@@ -9,32 +11,55 @@ import javafx.scene.input.KeyCode;
 
 public class GameController {
     private Stage stage;
+    private LevelManager levelManager;
+    private boolean isPaused;
 
     public GameController() {
-        GameMap map = MapLoader.loadPizzaMap();
-
-        stage = new Stage("type_d_pizza", MapType.PIZZA, map);
-        stage.initStage();
+        this.levelManager = LevelManager.getInstance();
+        this.isPaused = false;
     }
 
-    public void startGame() {
+    public void startLevel(Level level) {
+        levelManager.setCurrentLevel(level);
+
+        GameMap map = MapLoader.loadPizzaMap();
+
+        stage = new Stage("stage_" + level. getId(), MapType. PIZZA, map);
+        stage.applyLevelSettings(level);
+        stage.initStage();
         stage.startGame();
     }
 
+    public void startDefaultGame() {
+        GameMap map = MapLoader.loadPizzaMap();
+        stage = new Stage("type_d_pizza", MapType.PIZZA, map);
+        stage.initStage();
+        stage. startGame();
+    }
+
+    public void startGame() {
+        if (stage != null) {
+            stage.startGame();
+        }
+    }
+
     public void handleInput(KeyCode key) {
+        if (stage == null || ! stage.isGameRunning()) return;
+        if (isPaused) return;
+
         ChefPlayer activeChef = stage.getActiveChef();
         if (activeChef == null || activeChef.isBusy()) return;
 
         GameMap map = stage.getGameMap();
-        Position currentPos = activeChef.getPosition();
 
         switch (key) {
             case W -> attemptMove(activeChef, Direction.UP, map);
-            case A -> attemptMove(activeChef, Direction.LEFT, map);
+            case A -> attemptMove(activeChef, Direction. LEFT, map);
             case S -> attemptMove(activeChef, Direction.DOWN, map);
             case D -> attemptMove(activeChef, Direction.RIGHT, map);
             case C, V -> handleInteract(activeChef, map);
             case B -> stage.switchActiveChef();
+            case ESCAPE -> togglePause();
         }
     }
 
@@ -89,7 +114,19 @@ public class GameController {
         }
     }
 
+    public void togglePause() {
+        isPaused = !isPaused;
+    }
+
+    public boolean isPaused() {
+        return isPaused;
+    }
+
     public Stage getStage() {
         return stage;
+    }
+
+    public LevelManager getLevelManager() {
+        return levelManager;
     }
 }
