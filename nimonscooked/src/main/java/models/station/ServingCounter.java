@@ -2,6 +2,7 @@ package models.station;
 
 import models.player.ChefPlayer;
 import models.item.Dish;
+import models.item.PizzaDish;
 import models.item.kitchenutensils.Plate;
 import controllers.Stage;
 import models.core.Position;
@@ -20,6 +21,10 @@ public class ServingCounter extends Station {
     public void interact(ChefPlayer chef) {
         if (chef.getInventory() instanceof Plate plate && plate.getDish() != null && plate.isClean()) {
             Dish dish = plate.getDish();
+            if (dish instanceof PizzaDish pizza && !pizza.isBaked()) {
+                // Pizza not baked / raw
+                return;
+            }
             stage.validateServe(dish);
             // kalau score > 0 berarti order match
             plate.markDirty();

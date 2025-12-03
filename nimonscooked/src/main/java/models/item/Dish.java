@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class Dish extends Item {
     private String dishName;
-    private List<Preparable> components;
+    protected List<Preparable> components;
 
     public Dish(String dishName) {
         super(dishName);
