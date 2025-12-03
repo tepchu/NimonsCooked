@@ -106,4 +106,7 @@ public class ChefPlayer {
     public String getName() { return name; }
     public Position getPosition() { return position; }
     public Direction getDirection() { return direction; }
+    public void setDirection(Direction dir) {
+        this.direction = dir;
+    }
 }
