@@ -1,153 +1,95 @@
 package controllers;
 
-import models.level.Level;
-import models.level.LevelManager;
-import models.map.GameMap;
-import models.map.MapLoader;
-import models. player.ChefPlayer;
-import models. core.Direction;
+import models.map.*;
+import models.player.ChefPlayer;
+import models.core.Position;
+import models.core.Direction;
+import models.station.Station;
+import javafx.scene.input.KeyCode;
 
 public class GameController {
-
-    private Stage currentStage;
-    private LevelManager levelManager;
-    private boolean isPaused;
+    private Stage stage;
 
     public GameController() {
-        this. levelManager = LevelManager.getInstance();
-        this.isPaused = false;
-    }
-
-    public void startLevel(Level level) {
-        levelManager.setCurrentLevel(level);
-
         GameMap map = MapLoader.loadPizzaMap();
 
-        currentStage = new Stage(
-                "stage_" + level. getId(),
-                level.getMapType(),
-                map
-        );
-
-        currentStage.applyLevelSettings(level);
-
-        currentStage. initStage();
+        stage = new Stage("type_d_pizza", MapType.PIZZA, map);
+        stage.initStage();
     }
 
-    public void handleInput(char key) {
-        if (currentStage == null || !currentStage. isGameRunning()) return;
-        if (isPaused) return;
+    public void startGame() {
+        stage.startGame();
+    }
 
-        ChefPlayer activeChef = currentStage.getActiveChef();
+    public void handleInput(KeyCode key) {
+        ChefPlayer activeChef = stage.getActiveChef();
         if (activeChef == null || activeChef.isBusy()) return;
 
-        GameMap map = currentStage.getGameMap();
-        int currentX = activeChef.getPosition().getX();
-        int currentY = activeChef.getPosition().getY();
-        int newX = currentX;
-        int newY = currentY;
+        GameMap map = stage.getGameMap();
+        Position currentPos = activeChef.getPosition();
 
-        switch (Character.toUpperCase(key)) {
-            case 'W', 38 -> {
-                newY = currentY - 1;
-                activeChef.setDirection(Direction.UP);
-                if (canMoveTo(map, newX, newY)) {
-                    activeChef.move(Direction.UP);
-                }
-            }
-            case 'S', 40 -> {
-                newY = currentY + 1;
-                activeChef.setDirection(Direction.DOWN);
-                if (canMoveTo(map, newX, newY)) {
-                    activeChef. move(Direction.DOWN);
-                }
-            }
-            case 'A', 37 -> {
-                newX = currentX - 1;
-                activeChef.setDirection(Direction.LEFT);
-                if (canMoveTo(map, newX, newY)) {
-                    activeChef.move(Direction.LEFT);
-                }
-            }
-            case 'D', 39 -> {
-                newX = currentX + 1;
-                activeChef.setDirection(Direction.RIGHT);
-                if (canMoveTo(map, newX, newY)) {
-                    activeChef.move(Direction.RIGHT);
-                }
-            }
-            case 'C', 67 -> handlePickupDrop();
-            case 'V', 86 -> handleInteract();
-            case 'Q', 81 -> currentStage.switchActiveChef();
+        switch (key) {
+            case W -> attemptMove(activeChef, Direction.UP, map);
+            case A -> attemptMove(activeChef, Direction.LEFT, map);
+            case S -> attemptMove(activeChef, Direction.DOWN, map);
+            case D -> attemptMove(activeChef, Direction.RIGHT, map);
+            case C, V -> handleInteract(activeChef, map);
+            case B -> stage.switchActiveChef();
         }
     }
 
-    private boolean canMoveTo(GameMap map, int x, int y) {
-        if (! map.isWalkable(x, y)) return false;
+    private void attemptMove(ChefPlayer chef, Direction dir, GameMap map) {
+        Position currentPos = chef.getPosition();
+        int newX = currentPos.getX();
+        int newY = currentPos.getY();
 
-        for (ChefPlayer chef : currentStage.getChefs()) {
-            if (chef != currentStage.getActiveChef() &&
-                    chef.getPosition().getX() == x &&
-                    chef.getPosition().getY() == y) {
-                return false;
+        switch (dir) {
+            case UP -> newY--;
+            case DOWN -> newY++;
+            case LEFT -> newX--;
+            case RIGHT -> newX++;
+        }
+
+        if (map.isWalkable(newX, newY)) {
+            boolean blocked = false;
+            for (ChefPlayer other : stage.getChefs()) {
+                if (other != chef) {
+                    Position otherPos = other.getPosition();
+                    if (otherPos.getX() == newX && otherPos.getY() == newY) {
+                        blocked = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!blocked) {
+                chef.move(dir);
             }
         }
-        return true;
     }
 
-    private void handlePickupDrop() {
-        ChefPlayer chef = currentStage. getActiveChef();
-        GameMap map = currentStage.getGameMap();
+    private void handleInteract(ChefPlayer chef, GameMap map) {
+        Position chefPos = chef.getPosition();
+        Direction dir = chef.getDirection();
 
-        int frontX = chef. getPosition().getX();
-        int frontY = chef.getPosition().getY();
+        int frontX = chefPos.getX();
+        int frontY = chefPos.getY();
 
-        switch (chef.getDirection()) {
+        switch (dir) {
             case UP -> frontY--;
             case DOWN -> frontY++;
             case LEFT -> frontX--;
             case RIGHT -> frontX++;
         }
 
-        var station = map.getStationAt(frontX, frontY);
+        Station station = map.getStationAt(frontX, frontY);
+
         if (station != null) {
-            chef.interact(station);
+            station.interact(chef);
         }
     }
 
-    private void handleInteract() {
-        ChefPlayer chef = currentStage.getActiveChef();
-        GameMap map = currentStage.getGameMap();
-
-        int frontX = chef.getPosition(). getX();
-        int frontY = chef.getPosition().getY();
-
-        switch (chef. getDirection()) {
-            case UP -> frontY--;
-            case DOWN -> frontY++;
-            case LEFT -> frontX--;
-            case RIGHT -> frontX++;
-        }
-
-        var station = map.getStationAt(frontX, frontY);
-        if (station != null) {
-            chef.interact(station);
-        }
-    }
-
-    public void togglePause() {
-        isPaused = !isPaused;
-    }
-
-    public Stage getCurrentStage() {
-        return currentStage;
-    }
-
-    public LevelManager getLevelManager() {
-        return levelManager;
-    }
-
-    public boolean isPaused() {
-        return isPaused;
+    public Stage getStage() {
+        return stage;
     }
 }
