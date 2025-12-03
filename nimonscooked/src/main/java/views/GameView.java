@@ -60,6 +60,8 @@ public class GameView {
     private Label scoreValueLabel;
     private Label timeValueLabel;
     private Label chefLabel;
+    private Label dashCooldownLabel;
+
 
     private AnimationTimer gameLoop;
     private long lastUpdate = 0;
@@ -141,6 +143,8 @@ public class GameView {
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode. ESCAPE) {
                 showPauseMenu(primaryStage);
+            }  else if (e.isShiftDown()) {
+                gameController.handleDashInput(e.getCode(), true);
             } else {
                 gameController. handleInput(e. getCode());
             }
@@ -273,8 +277,7 @@ public class GameView {
         bottom.setPadding(new Insets(10));
         bottom.setStyle("-fx-background-color: #2A2A2A;");
 
-        Label controlsLabel = new Label("W/A/S/D: Move | C/V: Arialact | B: Switch Chef | ESC: Pause");
-        controlsLabel.setFont(Font.font("Arial", 12));
+        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C/V: Interact | B: Switch Chef | ESC: Pause");        controlsLabel.setFont(Font.font("Arial", 12));
         controlsLabel.setTextFill(Color. LIGHTGRAY);
 
         chefLabel = new Label("Active: Chef 1");
@@ -283,7 +286,10 @@ public class GameView {
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-
+        dashCooldownLabel = new Label("Dash: Ready");
+        dashCooldownLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        dashCooldownLabel.setTextFill(Color.LIGHTGREEN);
+        bottom.getChildren().add(dashCooldownLabel);
         bottom.getChildren().addAll(controlsLabel, spacer, chefLabel);
         return bottom;
     }
@@ -329,7 +335,14 @@ public class GameView {
 
         ChefPlayer activeChef = gameStage.getActiveChef();
         if (activeChef != null) {
-            chefLabel.setText("Active: " + activeChef.getName());
+            long cooldown = activeChef.getDashCooldownRemaining();
+            if (cooldown > 0) {
+                dashCooldownLabel.setText("Dash: " + (cooldown / 1000.0) + "s");
+                dashCooldownLabel.setTextFill(Color.RED);
+            } else {
+                dashCooldownLabel.setText("Dash: Ready [Shift+WASD]");
+                dashCooldownLabel.setTextFill(Color.LIGHTGREEN);
+            }
         }
 
         updateOrderPanel();
@@ -513,34 +526,77 @@ public class GameView {
     }
 
     private void drawStationLabel(int x, int y, Station station) {
-        String label = switch (station.getType()) {
-            case CUTTING -> "C";
-            case COOKING -> "R";
-            case ASSEMBLY -> "A";
-            case SERVING_COUNTER -> "S";
-            case WASHING -> "W";
+        String label;
+        Color labelColor = Color.WHITE;
+
+        switch (station.getType()) {
+            case CUTTING -> {
+                label = "CUTTING";
+                labelColor = Color.WHITE;
+            }
+            case COOKING -> {
+                label = "OVEN";
+                labelColor = Color.ORANGE;
+            }
+            case ASSEMBLY -> {
+                label = "ASSEMBLY";
+                labelColor = Color.LIGHTGREEN;
+            }
+            case SERVING_COUNTER -> {
+                label = "SERVE";
+                labelColor = Color.GOLD;
+            }
+            case WASHING -> {
+                label = "WASH";
+                labelColor = Color.LIGHTBLUE;
+            }
             case INGREDIENT_STORAGE -> {
                 if (station instanceof IngredientStorage storage) {
-                    IngredientType type = storage. getIngredientType();
-                    yield switch (type) {
-                        case DOUGH -> "D";
-                        case TOMATO -> "T";
-                        case CHEESE -> "C";
-                        case SAUSAGE -> "S";
-                        case CHICKEN -> "A";
-                        default -> "I";
+                    IngredientType type = storage.getIngredientType();
+                    label = switch (type) {
+                        case DOUGH -> "DOUGH";
+                        case TOMATO -> "TOMATO";
+                        case CHEESE -> "CHEESE";
+                        case SAUSAGE -> "SAUSAGE";
+                        case CHICKEN -> "CHICKEN";
                     };
+                    labelColor = Color.ORANGE;
+                } else {
+                    label = "INGRED";
                 }
-                yield "I";
             }
-            case PLATE_STORAGE -> "P";
-            case TRASH -> "T";
-            default -> "? ";
-        };
+            case PLATE_STORAGE -> {
+                label = "PLATES";
+                labelColor = Color.LIGHTGRAY;
+            }
+            case TRASH -> {
+                label = "TRASH";
+                labelColor = Color.RED;
+            }
+            default -> label = "?";
+        }
 
-        gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        gc.fillText(label, x + (double) TILE_SIZE / 2 - 5, y + (double) TILE_SIZE / 2 + 5);
+        gc.setFill(Color.rgb(0, 0, 0, 0.7));
+        gc.fillRect(x + 2, y + TILE_SIZE - 18, TILE_SIZE - 4, 16);
+
+        // Draw label text
+        gc.setFill(labelColor);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+        gc.fillText(label, x + 4, y + TILE_SIZE - 6);
+    }
+
+    private void drawChefInventory(ChefPlayer chef, int x, int y) {
+        if (chef.hasItem()) {
+            Item item = chef.getInventory();
+            String itemName = item.getName();
+
+            gc.setFill(Color.rgb(0, 0, 0, 0.8));
+            gc.fillRect(x - 5, y + TILE_SIZE + 2, TILE_SIZE + 10, 18);
+
+            gc.setFill(Color.YELLOW);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            gc.fillText(itemName.substring(0, Math.min(8, itemName.length())), x, y + TILE_SIZE + 14);
+        }
     }
 
 //    private void drawTileWithFallback(int x, int y, String imageKey, Color fallbackColor) {
@@ -600,57 +656,30 @@ public class GameView {
 //    }
 
     private void drawPlayers() {
-        List<ChefPlayer> chefs = gameStage. getChefs();
-        ChefPlayer activeChef = gameStage. getActiveChef();
-        int chefIndex = 0;
-        for (ChefPlayer chef : chefs) {
-//            chefIndex++;
-//            int x = chef.getPosition().getX() * TILE_SIZE;
-//            int y = chef.getPosition(). getY() * TILE_SIZE;
-//            boolean isActive = chef == activeChef;
-//            String chefKey = "chef" + chefIndex;
-//            if (useImages && hasImage(chefKey)) {
-//                gc.drawImage(getImage(chefKey), x, y, TILE_SIZE, TILE_SIZE);
-//                if (isActive) {
-//                    gc. setStroke(Color. YELLOW);
-//                    gc.setLineWidth(3);
-//                    gc.strokeOval(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-//                }
-//            } else {
-//                gc.setFill(isActive ? COLOR_PLAYER_ACTIVE : COLOR_PLAYER_INACTIVE);
-//                int padding = 8;
-//                gc. fillOval(x + padding, y + padding, TILE_SIZE - 2 * padding, TILE_SIZE - 2 * padding);
-//                if (isActive) {
-//                    gc. setStroke(Color.YELLOW);
-//                    gc.setLineWidth(3);
-//                    gc. strokeOval(x + padding - 2, y + padding - 2,
-//                            TILE_SIZE - 2 * padding + 4, TILE_SIZE - 2 * padding + 4);
-//                }
-//                gc.setFill(Color.WHITE);
-//                drawDirectionIndicator(chef, x, y);
-            int x = chef.getPosition().getX() * TILE_SIZE;
-            int y = chef.getPosition(). getY() * TILE_SIZE;
+        List<ChefPlayer> chefs = gameStage.getChefs();
+        ChefPlayer activeChef = gameStage.getActiveChef();
 
+        for (ChefPlayer chef : chefs) {
+            int x = chef.getPosition().getX() * TILE_SIZE;
+            int y = chef.getPosition().getY() * TILE_SIZE;
             boolean isActive = chef == activeChef;
 
             gc.setFill(isActive ? COLOR_PLAYER_ACTIVE : COLOR_PLAYER_INACTIVE);
             int padding = 8;
-            gc. fillOval(x + padding, y + padding, TILE_SIZE - 2 * padding, TILE_SIZE - 2 * padding);
+            gc.fillOval(x + padding, y + padding, TILE_SIZE - 2 * padding, TILE_SIZE - 2 * padding);
 
             if (isActive) {
-                gc.setStroke(Color. YELLOW);
-                gc. setLineWidth(3);
-                gc. strokeOval(x + padding - 2, y + padding - 2,
+                gc.setStroke(Color.YELLOW);
+                gc.setLineWidth(3);
+                gc.strokeOval(x + padding - 2, y + padding - 2,
                         TILE_SIZE - 2 * padding + 4, TILE_SIZE - 2 * padding + 4);
             }
             gc.setFill(Color.WHITE);
-//            gc. setFont(Font. font("Arial", FontWeight.BOLD, 10));
-//            String label = isActive ? "★ " + chef.getName() : chef.getName();
-//            gc.fillText(label, x + 5, y - 5);
             drawDirectionIndicator(chef, x, y);
-            gc. setFont(Font. font("Arial", FontWeight.BOLD, 10));
-            String label = isActive ? "* " + chef.getName() : chef.getName();
-            gc. fillText(label, x + 5, y - 5);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            String label = isActive ? "★ " + chef.getName() : chef.getName();
+            gc.fillText(label, x + 5, y - 5);
+            drawChefInventory(chef, x, y);
         }
     }
 
