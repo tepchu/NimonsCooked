@@ -4,18 +4,18 @@ import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.canvas. Canvas;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx. scene.control.Button;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
-import javafx.scene. image.ImageView;
-import javafx. scene.input.KeyCode;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.scene. paint.Color;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx. scene.text.Font;
-import javafx.scene.text. FontWeight;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import controllers.*;
@@ -29,6 +29,7 @@ import models.recipe.*;
 import models.order.Order;
 import models.enums.*;
 import models.station.IngredientStorage;
+
 import java.util.*;
 
 public class GameView {
@@ -38,17 +39,17 @@ public class GameView {
 
     // For testing (solid colours)
     private static final Color COLOR_WALL = Color.rgb(80, 80, 80);
-    private static final Color COLOR_FLOOR = Color.rgb(200, 180, 150);
     private static final Color COLOR_PLAYER_ACTIVE = Color.BLACK;
     private static final Color COLOR_PLAYER_INACTIVE = Color.rgb(60, 60, 60);
-    private static final Color COLOR_CUTTING = Color.rgb(139, 69, 19);
-    private static final Color COLOR_COOKING = Color. rgb(255, 69, 0);
-    private static final Color COLOR_ASSEMBLY = Color.rgb(34, 139, 34);
-    private static final Color COLOR_SERVING = Color. rgb(255, 215, 0);
-    private static final Color COLOR_WASHING = Color.rgb(70, 130, 180);
-    private static final Color COLOR_INGREDIENT = Color.rgb(255, 140, 0);
-    private static final Color COLOR_PLATE = Color.rgb(245, 245, 245);
-    private static final Color COLOR_TRASH = Color. rgb(105, 105, 105);
+    private static final Color COLOR_FLOOR = Color.rgb(200, 180, 150);
+    private static final Color COLOR_CUTTING = Color.RED;
+    private static final Color COLOR_COOKING = Color.BLUE;
+    private static final Color COLOR_ASSEMBLY = Color.GREEN;
+    private static final Color COLOR_SERVING = Color.YELLOW;
+    private static final Color COLOR_WASHING = Color.MAGENTA;
+    private static final Color COLOR_INGREDIENT = Color.CYAN;
+    private static final Color COLOR_PLATE = Color.PURPLE;
+    private static final Color COLOR_TRASH = Color.ORANGE;
 
     private GameController gameController;
     private Canvas canvas;
@@ -70,7 +71,7 @@ public class GameView {
     private boolean useImages = false; // Set to TRUE when image resource is available
 
     public GameView(GameController controller) {
-        this. gameController = controller;
+        this.gameController = controller;
         this.gameStage = controller.getStage();
         loadImages();
     }
@@ -141,12 +142,12 @@ public class GameView {
         Scene scene = new Scene(mainContainer, MAP_WIDTH, 700);
 
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode. ESCAPE) {
+            if (e.getCode() == KeyCode.ESCAPE) {
                 showPauseMenu(primaryStage);
-            }  else if (e.isShiftDown()) {
+            } else if (e.isShiftDown()) {
                 gameController.handleDashInput(e.getCode(), true);
             } else {
-                gameController. handleInput(e. getCode());
+                gameController.handleInput(e.getCode());
             }
         });
 
@@ -171,18 +172,19 @@ public class GameView {
         HBox rightSection = createScoreTimerSection();
         rightSection.setPrefWidth((double) MAP_WIDTH / 2 - 10);
 
-        topSection.getChildren(). addAll(orderPanel, rightSection);
+        topSection.getChildren().addAll(orderPanel, rightSection);
         return topSection;
     }
 
     private VBox createOrderPanel() {
         VBox panel = new VBox(8);
-        panel. setPadding(new Insets(10));
-        panel. setStyle("-fx-background-color: #3A3A3A;" + "-fx-background-radius: 10;");
+        panel.setPadding(new Insets(10));
+        panel.setStyle("-fx-background-color: #3A3A3A;" + "-fx-background-radius: 10;");
 
         Label title = new Label("ORDERS");
-        title. setFont(Font.font("Arial", FontWeight. BOLD, 14));
-        title. setTextFill(Color. WHITE);
+        title.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 14));
+        title.setTextFill(Color.WHITE);
         panel.getChildren().add(title);
 
         return panel;
@@ -198,7 +200,7 @@ public class GameView {
         VBox timerPanel = createTimerPanel();
         timerPanel.setPrefWidth((double) (MAP_WIDTH / 2 - 20) / 2);
 
-        section.getChildren(). addAll(scorePanel, timerPanel);
+        section.getChildren().addAll(scorePanel, timerPanel);
         return section;
     }
 
@@ -219,12 +221,14 @@ public class GameView {
 //        }
 
         Label titleLabel = new Label("SCORE");
-        titleLabel.setFont(Font.font("Arial", FontWeight. BOLD, 14));
-        titleLabel.setTextFill(Color. LIGHTGRAY);
+        titleLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 14));
+        titleLabel.setTextFill(Color.LIGHTGRAY);
 
         scoreValueLabel = new Label("$0");
-        scoreValueLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32));
-        scoreValueLabel.setTextFill(Color. GOLD);
+        scoreValueLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 32));
+        scoreValueLabel.setTextFill(Color.GOLD);
 
         panel.getChildren().addAll(titleLabel, scoreValueLabel);
         return panel;
@@ -248,15 +252,17 @@ public class GameView {
 //        }
 
         Label titleLabel = new Label("TIME");
-        titleLabel.setFont(Font.font("Arial", FontWeight. BOLD, 14));
-        titleLabel. setTextFill(Color.LIGHTGRAY);
+        titleLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 14));
+        titleLabel.setTextFill(Color.LIGHTGRAY);
 //        titleBox.getChildren(). add(titleLabel);
 
         timeValueLabel = new Label("3:00");
-        timeValueLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32));
-        timeValueLabel.setTextFill(Color. WHITE);
+        timeValueLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 32));
+        timeValueLabel.setTextFill(Color.WHITE);
 
-        panel. getChildren().addAll(titleLabel, timeValueLabel);
+        panel.getChildren().addAll(titleLabel, timeValueLabel);
         return panel;
     }
 
@@ -273,21 +279,25 @@ public class GameView {
 
     private HBox createBottomSection() {
         HBox bottom = new HBox(20);
-        bottom. setAlignment(Pos.CENTER);
+        bottom.setAlignment(Pos.CENTER);
         bottom.setPadding(new Insets(10));
         bottom.setStyle("-fx-background-color: #2A2A2A;");
 
-        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C/V: Interact | B: Switch Chef | ESC: Pause");        controlsLabel.setFont(Font.font("Arial", 12));
-        controlsLabel.setTextFill(Color. LIGHTGRAY);
+        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C/V: Interact | B: Switch Chef | ESC: Pause");
+        controlsLabel.setFont(Font.font("Inter" +
+                "", 12));
+        controlsLabel.setTextFill(Color.LIGHTGRAY);
 
         chefLabel = new Label("Active: Chef 1");
-        chefLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        chefLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 14));
         chefLabel.setTextFill(Color.LIGHTGREEN);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         dashCooldownLabel = new Label("Dash: Ready");
-        dashCooldownLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        dashCooldownLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 12));
         dashCooldownLabel.setTextFill(Color.LIGHTGREEN);
         bottom.getChildren().add(dashCooldownLabel);
         bottom.getChildren().addAll(controlsLabel, spacer, chefLabel);
@@ -301,11 +311,11 @@ public class GameView {
                 if (now - lastUpdate >= 1_000_000_000) {
                     lastUpdate = now;
 
-                    if (! gameController.isPaused() && gameStage.isGameRunning()) {
+                    if (!gameController.isPaused() && gameStage.isGameRunning()) {
                         gameStage.update();
                         updateHUD();
 
-                        if (! gameStage.isGameRunning()) {
+                        if (!gameStage.isGameRunning()) {
                             this.stop();
                             showResultScreen(primaryStage);
                         }
@@ -323,12 +333,12 @@ public class GameView {
         int time = gameStage.getTimeRemaining();
         int mins = time / 60;
         int secs = time % 60;
-        timeValueLabel. setText(String.format("%d:%02d", mins, secs));
+        timeValueLabel.setText(String.format("%d:%02d", mins, secs));
 
         if (time <= 30) {
-            timeValueLabel.setTextFill(Color. RED);
+            timeValueLabel.setTextFill(Color.RED);
         } else if (time <= 60) {
-            timeValueLabel. setTextFill(Color.YELLOW);
+            timeValueLabel.setTextFill(Color.YELLOW);
         } else {
             timeValueLabel.setTextFill(Color.WHITE);
         }
@@ -349,8 +359,8 @@ public class GameView {
     }
 
     private void updateOrderPanel() {
-        if (orderPanel. getChildren().size() > 1) {
-            orderPanel.getChildren(). remove(1, orderPanel.getChildren(). size());
+        if (orderPanel.getChildren().size() > 1) {
+            orderPanel.getChildren().remove(1, orderPanel.getChildren().size());
         }
 
         List<Order> orders = gameStage.getAllOrders();
@@ -363,15 +373,15 @@ public class GameView {
             ordersContainer.getChildren().add(orderBox);
         }
 
-        orderPanel.getChildren(). add(ordersContainer);
+        orderPanel.getChildren().add(ordersContainer);
     }
 
     private VBox createOrderBox(Order order) {
         VBox box = new VBox(4);
-        box. setPadding(new Insets(8));
-        box. setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(8));
+        box.setAlignment(Pos.CENTER);
         box.setPrefWidth(100);
-        box. setStyle("-fx-background-color: #4A4A4A;" + "-fx-background-radius: 8;");
+        box.setStyle("-fx-background-color: #4A4A4A;" + "-fx-background-radius: 8;");
 //        String pizzaKey = getPizzaImageKey(order. getRecipe().getName());
 //        if (hasImage(pizzaKey)) {
 //            ImageView pizzaImg = new ImageView(getImage(pizzaKey));
@@ -380,24 +390,27 @@ public class GameView {
 //            box.getChildren(). add(pizzaImg);
 //        } else {
         Label pizzaIcon = new Label("[PIZZA]");
-        pizzaIcon.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-        pizzaIcon.setTextFill(Color. ORANGE);
+        pizzaIcon.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 10));
+        pizzaIcon.setTextFill(Color.ORANGE);
 //        box.getChildren().add(pizzaIcon);
 //        }
-        Label nameLabel = new Label(getShortName(order. getRecipe().getName()));
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        Label nameLabel = new Label(getShortName(order.getRecipe().getName()));
+        nameLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 10));
         nameLabel.setTextFill(Color.WHITE);
 
         int timeLeft = gameStage.getOrderTimeRemaining(order);
         double progress = gameStage.getOrderTimeProgress(order);
 
         Label timeLabel = new Label("Time: " + timeLeft + "s");
-        timeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+        timeLabel.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 11));
         timeLabel.setTextFill(getProgressColor(progress));
 
-        HBox ingredientsBox = createIngredientsIcons(order. getRecipe());
+        HBox ingredientsBox = createIngredientsIcons(order.getRecipe());
         StackPane progressBar = createProgressBar(progress, 80);
-        box. getChildren().addAll(nameLabel, timeLabel, ingredientsBox, progressBar);
+        box.getChildren().addAll(nameLabel, timeLabel, ingredientsBox, progressBar);
 
         return box;
     }
@@ -417,17 +430,18 @@ public class GameView {
 
     private HBox createIngredientsIcons(Recipe recipe) {
         HBox icons = new HBox(2);
-        icons. setAlignment(Pos.CENTER);
+        icons.setAlignment(Pos.CENTER);
 
         List<RecipeIngredientRequirement> requirements = recipe.getRequiredComponents();
 
         for (RecipeIngredientRequirement req : requirements) {
-            String ingredientName = req. getIngredientType(). getSimpleName();
-            String shortName = ingredientName.substring(0, Math.min(2, ingredientName. length())). toUpperCase();
+            String ingredientName = req.getIngredientType().getSimpleName();
+            String shortName = ingredientName.substring(0, Math.min(2, ingredientName.length())).toUpperCase();
 
             Label iconLabel = new Label("[" + shortName + "]");
-            iconLabel.setFont(Font.font("Arial", 8));
-            iconLabel.setTextFill(Color. LIGHTGRAY);
+            iconLabel.setFont(Font.font("Inter" +
+                    "", 8));
+            iconLabel.setTextFill(Color.LIGHTGRAY);
             icons.getChildren().add(iconLabel);
         }
 
@@ -442,7 +456,8 @@ public class GameView {
 //            } else {
 //                String emoji = getIngredientEmoji(ingredientName);
 //                Label iconLabel = new Label(emoji);
-//                iconLabel.setFont(Font.font("Arial", 12));
+//                iconLabel.setFont(Font.font("Inter
+//                ", 12));
 //                icons.getChildren().add(iconLabel);
 //            }
 //        }
@@ -453,9 +468,9 @@ public class GameView {
         bar.setAlignment(Pos.CENTER_LEFT);
 
         Rectangle bg = new Rectangle(width, 6);
-        bg. setFill(Color.rgb(80, 80, 80));
+        bg.setFill(Color.rgb(80, 80, 80));
         bg.setArcWidth(4);
-        bg. setArcHeight(4);
+        bg.setArcHeight(4);
 
         Rectangle fill = new Rectangle(width * progress, 6);
         fill.setFill(getProgressColorFX(progress));
@@ -469,7 +484,7 @@ public class GameView {
     }
 
     private Color getProgressColor(double progress) {
-        if (progress > 0.5) return Color. LIGHTGREEN;
+        if (progress > 0.5) return Color.LIGHTGREEN;
         else if (progress > 0.25) return Color.YELLOW;
         else return Color.RED;
     }
@@ -477,12 +492,12 @@ public class GameView {
     private Color getProgressColorFX(double progress) {
         if (progress > 0.5) return Color.rgb(46, 204, 113);
         else if (progress > 0.25) return Color.rgb(241, 196, 15);
-        else return Color. rgb(231, 76, 60);
+        else return Color.rgb(231, 76, 60);
     }
 
     private void render() {
         gc.setFill(Color.BLACK);
-        gc. fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
         GameMap map = gameStage.getGameMap();
 
@@ -507,6 +522,8 @@ public class GameView {
                     tileColor = COLOR_WALL;
                 } else if (station != null) {
                     tileColor = getStationColor(station);
+                    System.out.println("[RENDER] Station at (" + x + ", " + y + "): " +
+                            station.getType() + " -> Color: " + colorToString(tileColor));
                 } else {
                     tileColor = COLOR_FLOOR;
                 }
@@ -523,6 +540,13 @@ public class GameView {
                 }
             }
         }
+    }
+
+    private String colorToString(Color color) {
+        return "RGB(" +
+                (int) (color.getRed() * 255) + ", " +
+                (int) (color.getGreen() * 255) + ", " +
+                (int) (color.getBlue() * 255) + ")";
     }
 
     private void drawStationLabel(int x, int y, Station station) {
@@ -581,7 +605,8 @@ public class GameView {
 
         // Draw label text
         gc.setFill(labelColor);
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+        gc.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 9));
         gc.fillText(label, x + 4, y + TILE_SIZE - 6);
     }
 
@@ -594,7 +619,8 @@ public class GameView {
             gc.fillRect(x - 5, y + TILE_SIZE + 2, TILE_SIZE + 10, 18);
 
             gc.setFill(Color.YELLOW);
-            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            gc.setFont(Font.font("Inter" +
+                    "", FontWeight.BOLD, 10));
             gc.fillText(itemName.substring(0, Math.min(8, itemName.length())), x, y + TILE_SIZE + 14);
         }
     }
@@ -651,7 +677,8 @@ public class GameView {
 //        };
 //
 //        gc.setFill(Color.WHITE);
-//        gc. setFont(Font. font("Arial", FontWeight.BOLD, 14));
+//        gc. setFont(Font. font("Inter
+//        ", FontWeight.BOLD, 14));
 //        gc. fillText(label, x + (double) TILE_SIZE / 2 - 5, y + (double) TILE_SIZE / 2 + 5);
 //    }
 
@@ -676,7 +703,8 @@ public class GameView {
             }
             gc.setFill(Color.WHITE);
             drawDirectionIndicator(chef, x, y);
-            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            gc.setFont(Font.font("Inter" +
+                    "", FontWeight.BOLD, 10));
             String label = isActive ? "★ " + chef.getName() : chef.getName();
             gc.fillText(label, x + 5, y - 5);
             drawChefInventory(chef, x, y);
@@ -707,35 +735,38 @@ public class GameView {
                 xPoints = new double[]{centerX + size + 2, centerX - 2, centerX - 2};
                 yPoints = new double[]{centerY, centerY - size, centerY + size};
             }
-            default -> { return; }
+            default -> {
+                return;
+            }
         }
 
         gc.fillPolygon(xPoints, yPoints, 3);
     }
 
     private void showPauseMenu(Stage primaryStage) {
-        gameController. togglePause();
+        gameController.togglePause();
 
-        if (! gameController.isPaused()) return;
+        if (!gameController.isPaused()) return;
 
         Stage pauseStage = new Stage();
 
         VBox root = new VBox(20);
         root.setAlignment(Pos.CENTER);
-        root. setPadding(new Insets(30));
+        root.setPadding(new Insets(30));
         root.setStyle("-fx-background-color: #2D2D2D;");
 
         Label title = new Label("PAUSED");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 32));
-        title. setTextFill(Color.WHITE);
+        title.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 32));
+        title.setTextFill(Color.WHITE);
 
         Button resumeBtn = createPauseButton("Resume");
         Button restartBtn = createPauseButton("Restart");
         Button quitBtn = createPauseButton("Quit to Menu");
 
         resumeBtn.setOnAction(e -> {
-            gameController. togglePause();
-            pauseStage. close();
+            gameController.togglePause();
+            pauseStage.close();
         });
 
         restartBtn.setOnAction(e -> {
@@ -753,11 +784,11 @@ public class GameView {
             mainMenu.start(primaryStage);
         });
 
-        root.getChildren(). addAll(title, resumeBtn, restartBtn, quitBtn);
+        root.getChildren().addAll(title, resumeBtn, restartBtn, quitBtn);
 
         Scene scene = new Scene(root, 300, 280);
         pauseStage.setScene(scene);
-        pauseStage. setTitle("Paused");
+        pauseStage.setTitle("Paused");
         pauseStage.show();
 
         pauseStage.setOnCloseRequest(e -> gameController.togglePause());
@@ -766,7 +797,8 @@ public class GameView {
     private Button createPauseButton(String text) {
         Button btn = new Button(text);
         btn.setPrefWidth(200);
-        btn. setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        btn.setFont(Font.font("Inter" +
+                "", FontWeight.BOLD, 14));
         btn.setStyle(
                 "-fx-background-color: #4682B4;" +
                         "-fx-text-fill: white;" +
@@ -778,6 +810,6 @@ public class GameView {
     private void showResultScreen(Stage primaryStage) {
         gameLoop.stop();
         ResultView resultView = new ResultView(gameController);
-        resultView. show(primaryStage);
+        resultView.show(primaryStage);
     }
 }
