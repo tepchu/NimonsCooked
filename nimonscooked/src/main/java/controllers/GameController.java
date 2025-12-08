@@ -13,15 +13,20 @@ import models.item.Item;
 import models.item.Ingredient;
 import models.enums.IngredientState;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class GameController {
     private Stage stage;
     private LevelManager levelManager;
     private boolean isPaused;
+    private Map<Position, Item> itemsOnFloor;
 
     public GameController() {
         this.levelManager = LevelManager.getInstance();
         this.isPaused = false;
+        this.itemsOnFloor = new HashMap<>();
     }
 
     public void startLevel(Level level) {
@@ -29,7 +34,7 @@ public class GameController {
 
         GameMap map = MapLoader.loadPizzaMap();
 
-        stage = new Stage("stage_" + level. getId(), MapType. PIZZA, map);
+        stage = new Stage("stage_" + level.getId(), MapType.PIZZA, map);
         stage.applyLevelSettings(level);
         stage.initStage();
         stage.startGame();
@@ -39,7 +44,7 @@ public class GameController {
         GameMap map = MapLoader.loadPizzaMap();
         stage = new Stage("type_d_pizza", MapType.PIZZA, map);
         stage.initStage();
-        stage. startGame();
+        stage.startGame();
     }
 
     public void startGame() {
@@ -49,7 +54,7 @@ public class GameController {
     }
 
     public void handleInput(KeyCode key) {
-        if (stage == null || ! stage.isGameRunning()) return;
+        if (stage == null || !stage.isGameRunning()) return;
         if (isPaused) return;
 
         ChefPlayer activeChef = stage.getActiveChef();
@@ -59,10 +64,11 @@ public class GameController {
 
         switch (key) {
             case W -> attemptMove(activeChef, Direction.UP, map);
-            case A -> attemptMove(activeChef, Direction. LEFT, map);
+            case A -> attemptMove(activeChef, Direction.LEFT, map);
             case S -> attemptMove(activeChef, Direction.DOWN, map);
             case D -> attemptMove(activeChef, Direction.RIGHT, map);
-            case SHIFT -> {}
+            case SHIFT -> {
+            }
             case C, V -> handleInteract(activeChef, map);
             case SPACE -> handleThrow(activeChef, map);
             case B -> stage.switchActiveChef();
@@ -81,6 +87,8 @@ public class GameController {
             case LEFT -> newX--;
             case RIGHT -> newX++;
         }
+
+        chef.setDirection(dir);
 
         if (map.isWalkable(newX, newY)) {
             boolean blocked = false;
@@ -118,6 +126,25 @@ public class GameController {
 
         if (station != null) {
             station.interact(chef);
+        } else {
+            handleFloorInteraction(chef, frontX, frontY);
+        }
+    }
+
+    private void handleFloorInteraction(ChefPlayer chef, int x, int y) {
+        Position targetPos = new Position(x, y);
+
+        if (!chef.hasItem() && itemsOnFloor.containsKey(targetPos)) {
+            Item item = itemsOnFloor.remove(targetPos);
+            chef.pickUp(item);
+            System.out.println("Picked up " + item.getName() + " from floor");
+        } else if (chef.hasItem() && !itemsOnFloor.containsKey(targetPos)) {
+            GameMap map = stage.getGameMap();
+            if (map.isWalkable(x, y)) {
+                Item dropped = chef.drop();
+                itemsOnFloor.put(targetPos, dropped);
+                System.out.println("Dropped " + dropped.getName() + " on floor at (" + x + ", " + y + ")");
+            }
         }
     }
 
@@ -220,8 +247,8 @@ public class GameController {
         }
 
         Ingredient ingredient = (Ingredient) item;
-        if (ingredient.getState() != IngredientState.RAW) {
-            System.out.println("Can only throw raw ingredients!");
+        if (ingredient.getState() != IngredientState.RAW || ingredient.getState() != IngredientState.CHOPPED) {
+            System.out.println("Can only throw raw and chopped ingredients!");
             return;
         }
 
@@ -264,8 +291,6 @@ public class GameController {
                     System.out.println("Caught by " + catchingChef.getName());
                     return;
                 } else {
-                    landX = checkX;
-                    landY = checkY;
                     break;
                 }
             }
@@ -274,9 +299,12 @@ public class GameController {
             landY = checkY;
         }
 
-        chef.drop();
-        System.out.println("Threw " + ingredient.getName() + " to (" + landX + ", " + landY + ")");
+        Item thrownItem = chef.drop();
+        Position landPos = new Position(landX, landY);
+        itemsOnFloor.put(landPos, thrownItem);
+        System.out.println("Threw " + thrownItem.getName() + " to (" + landX + ", " + landY + ")");
     }
+
     public void togglePause() {
         isPaused = !isPaused;
     }
@@ -291,5 +319,9 @@ public class GameController {
 
     public LevelManager getLevelManager() {
         return levelManager;
+    }
+
+    public Map<Position, Item> getItemsOnFloor() {
+        return itemsOnFloor;
     }
 }
