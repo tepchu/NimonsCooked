@@ -20,6 +20,10 @@ public class ChefPlayer {
     private boolean busy;
     private Thread busyThread;
 
+    private long lastDashTime = 0;
+    private static final long DASH_COOLDOWN_MS = 3000; // 3 second cooldown
+    private static final int DASH_DISTANCE = 3; // Move 3 tiles at once
+
     public ChefPlayer(String id, String name, Position startPos) {
         this.id = id;
         this.name = name;
@@ -106,4 +110,22 @@ public class ChefPlayer {
     public String getName() { return name; }
     public Position getPosition() { return position; }
     public Direction getDirection() { return direction; }
+    public void setDirection(Direction dir) {
+        this.direction = dir;
+    }
+
+    public boolean canDash() {
+        long currentTime = System.currentTimeMillis();
+        return (currentTime - lastDashTime) >= DASH_COOLDOWN_MS;
+    }
+
+    public void recordDash() {
+        lastDashTime = System.currentTimeMillis();
+    }
+
+    public long getDashCooldownRemaining() {
+        long elapsed = System.currentTimeMillis() - lastDashTime;
+        long remaining = DASH_COOLDOWN_MS - elapsed;
+        return Math.max(0, remaining);
+    }
 }
