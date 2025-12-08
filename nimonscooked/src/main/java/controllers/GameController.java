@@ -112,6 +112,13 @@ public class GameController {
         Position chefPos = chef.getPosition();
         Direction dir = chef.getDirection();
 
+        if (!chef.hasItem() && itemsOnFloor.containsKey(chefPos)) {
+            Item item = itemsOnFloor.remove(chefPos);
+            chef.pickUp(item);
+            System.out.println("Picked up " + item.getName() + " from current position");
+            return;
+        }
+
         int frontX = chefPos.getX();
         int frontY = chefPos.getY();
 
@@ -246,12 +253,6 @@ public class GameController {
             return;
         }
 
-        Ingredient ingredient = (Ingredient) item;
-        if (ingredient.getState() != IngredientState.RAW || ingredient.getState() != IngredientState.CHOPPED) {
-            System.out.println("Can only throw raw and chopped ingredients!");
-            return;
-        }
-
         Position chefPos = chef.getPosition();
         Direction dir = chef.getDirection();
 
@@ -270,9 +271,11 @@ public class GameController {
                 case RIGHT -> checkX += i;
             }
 
-            if (!map.isWalkable(checkX, checkY)) {
+            if (!map.inBounds(checkX, checkY) || map.getTile(checkX, checkY) == 'X') {
                 break;
             }
+
+            boolean isStation = map.getStationAt(checkX, checkY) != null;
 
             ChefPlayer catchingChef = null;
             for (ChefPlayer other : stage.getChefs()) {
@@ -291,12 +294,18 @@ public class GameController {
                     System.out.println("Caught by " + catchingChef.getName());
                     return;
                 } else {
-                    break;
+                    if (!map.isWalkable(checkX, checkY)) {
+                        break;
+                    }
                 }
             }
 
-            landX = checkX;
-            landY = checkY;
+            if (map.isWalkable(checkX, checkY)) {
+                landX = checkX;
+                landY = checkY;
+            } else if (!isStation) {
+                break;
+            }
         }
 
         Item thrownItem = chef.drop();

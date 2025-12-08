@@ -502,7 +502,67 @@ public class GameView {
         GameMap map = gameStage.getGameMap();
 
         drawMap(map);
+        drawFloorItems();
         drawPlayers();
+    }
+
+    private void drawFloorItems() {
+        Map<Position, Item> itemsOnFloor = gameController.getItemsOnFloor();
+
+        for (Map.Entry<Position, Item> entry : itemsOnFloor.entrySet()) {
+            Position pos = entry.getKey();
+            Item item = entry.getValue();
+
+            int x = pos.getX() * TILE_SIZE;
+            int y = pos.getY() * TILE_SIZE;
+
+            // Draw semi-transparent background
+            gc.setFill(Color.rgb(255, 255, 255, 0.3));
+            gc.fillRect(x + 5, y + 5, TILE_SIZE - 10, TILE_SIZE - 10);
+
+            // Draw item indicator
+            if (item instanceof Ingredient) {
+                Ingredient ing = (Ingredient) item;
+
+                // Color based on state
+                Color itemColor;
+                switch (ing.getState()) {
+                    case RAW -> itemColor = Color.rgb(255, 140, 0);
+                    case CHOPPED -> itemColor = Color.rgb(255, 215, 0);
+                    case COOKED -> itemColor = Color.rgb(34, 139, 34);
+                    case BURNED -> itemColor = Color.rgb(139, 0, 0);
+                    default -> itemColor = Color.ORANGE;
+                }
+
+                gc.setFill(itemColor);
+                gc.fillOval(x + 12, y + 12, TILE_SIZE - 24, TILE_SIZE - 24);
+
+                // Draw text label
+                gc.setFill(Color.WHITE);
+                gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+                String shortName = ing.getName().substring(0, Math.min(4, ing.getName().length()));
+                gc.fillText(shortName, x + 10, y + TILE_SIZE - 8);
+
+                // Draw state indicator
+                String stateChar = switch (ing.getState()) {
+                    case RAW -> "R";
+                    case CHOPPED -> "C";
+                    case COOKED -> "K";
+                    case BURNED -> "B";
+                    default -> "?";
+                };
+                gc.fillText(stateChar, x + TILE_SIZE - 15, y + 15);
+            } else {
+                // Other items
+                gc.setFill(Color.LIGHTGRAY);
+                gc.fillRect(x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+
+                gc.setFill(Color.BLACK);
+                gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+                String shortName = item.getName().substring(0, Math.min(4, item.getName().length()));
+                gc.fillText(shortName, x + 12, y + TILE_SIZE / 2);
+            }
+        }
     }
 
     private void drawMap(GameMap map) {
@@ -522,8 +582,6 @@ public class GameView {
                     tileColor = COLOR_WALL;
                 } else if (station != null) {
                     tileColor = getStationColor(station);
-                    System.out.println("[RENDER] Station at (" + x + ", " + y + "): " +
-                            station.getType() + " -> Color: " + colorToString(tileColor));
                 } else {
                     tileColor = COLOR_FLOOR;
                 }
@@ -563,8 +621,20 @@ public class GameView {
                 labelColor = Color.ORANGE;
             }
             case ASSEMBLY -> {
-                label = "ASSEMBLY";
-                labelColor = Color.LIGHTGREEN;
+                AssemblyStation assembly = (AssemblyStation) station;
+                if (assembly.hasPlate() && assembly.hasIngredient()) {
+                    label = "PLATE+ING";
+                    labelColor = Color.YELLOW;
+                } else if (assembly.hasPlate()) {
+                    label = "PLATE";
+                    labelColor = Color.LIGHTGREEN;
+                } else if (assembly.hasIngredient()) {
+                    label = "INGRED";
+                    labelColor = Color.ORANGE;
+                } else {
+                    label = "ASSEMBLY";
+                    labelColor = Color.LIGHTGREEN;
+                }
             }
             case SERVING_COUNTER -> {
                 label = "SERVE";
