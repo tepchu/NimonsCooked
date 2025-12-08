@@ -18,7 +18,12 @@ public class IngredientStorage extends Station {
     @Override
     public void interact(ChefPlayer chef) {
         if (!chef.hasItem()) {
-            chef.pickUp(IngredientFactory.create(type));
+           chef.pickUp(IngredientFactory.createIngredient(type));
+
         }
+    }
+
+    public IngredientType getIngredientType() {
+        return type;
     }
 }

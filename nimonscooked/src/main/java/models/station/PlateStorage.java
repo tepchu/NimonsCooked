@@ -26,7 +26,7 @@ public class PlateStorage extends Station {
         if (!chef.hasItem() && !stack.isEmpty()) {
             // kalau top adalah clean plate → ambil 1
             Plate top = stack.peek();
-            if (!top.isDirty()) {
+            if (top.isClean()) {
                 chef.pickUp(stack.pop());
             } else {
                 // piring kotor di atas → bisa diambil semuanya
@@ -38,7 +38,7 @@ public class PlateStorage extends Station {
     }
 
     public void pushDirtyPlate(Plate plate) {
-        plate.makeDirty();
+        plate.markDirty();
         stack.push(plate);
     }
 }

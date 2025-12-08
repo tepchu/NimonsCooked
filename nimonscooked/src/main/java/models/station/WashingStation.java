@@ -20,10 +20,10 @@ public class WashingStation extends Station {
     @Override
     public void interact(ChefPlayer chef) {
         // letakkan piring kotor ke stack dirty
-        if (chef.getInventory() instanceof Plate p && p.isDirty()) {
+        if (chef.getInventory() instanceof Plate p && !p.isClean()) {
             // stack sederhana: tumpuk di atas
             p.setDish(null);
-            p.makeDirty();
+            p.markDirty();
             dirtyStackTop = p;
             chef.drop();
         }
@@ -32,7 +32,7 @@ public class WashingStation extends Station {
             Plate toWash = dirtyStackTop;
 
             chef.startBusy(CurrentAction.WASHING, WASH_DURATION_SEC, () -> {
-                toWash.clean();
+                toWash.setClean(true);
                 cleanStackTop = toWash;
                 dirtyStackTop = null; // versi simple
             });
