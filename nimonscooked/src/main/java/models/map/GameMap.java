@@ -3,6 +3,7 @@ package models.map;
 import models.station.*;
 import models.core.Position;
 import models.enums.IngredientType;
+
 import java.util.*;
 
 public class GameMap {
@@ -22,43 +23,81 @@ public class GameMap {
         this.chefSpawns = new ArrayList<>();
         this.random = new Random();
         parseStations();
+        debugPrintMapGrid(grid);
     }
 
     private void parseStations() {
         List<Position> ingredientStoragePositions = new ArrayList<>();
+        int stationCount = 0;
+
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 Position pos = new Position(x, y);
                 char tile = grid[y][x];
 
                 switch (tile) {
-                    case 'C' -> stations.put(pos, new CuttingStation(pos));
+                    case 'C' -> {
+                        stations.put(pos, new CuttingStation(pos));
+                        System.out.println("✓ CUTTING station at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
                     case 'R' -> {
                         CookingStation cs = new CookingStation(pos);
-                        // For Type D, place Oven on cooking station
                         cs.placeDevice(new models.item.kitchenutensils.Oven());
                         stations.put(pos, cs);
+                        System.out.println("✓ COOKING station at (" + x + ", " + y + ")");
+                        stationCount++;
                     }
-                    case 'A' -> stations.put(pos, new AssemblyStation(pos));
-                    case 'S' -> stations.put(pos, new ServingCounter(pos, null)); // Stage set later
-                    case 'W' -> stations.put(pos, new WashingStation(pos));
-                    case 'P' -> stations.put(pos, new PlateStorage(pos, 3));
-                    case 'T' -> stations.put(pos, new TrashStation(pos));
+                    case 'A' -> {
+                        stations.put(pos, new AssemblyStation(pos));
+                        System.out.println("✓ ASSEMBLY station at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
+                    case 'S' -> {
+                        stations.put(pos, new ServingCounter(pos, null));
+                        System.out.println("✓ SERVING station at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
+                    case 'W' -> {
+                        stations.put(pos, new WashingStation(pos));
+                        System.out.println("✓ WASHING station at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
+                    case 'P' -> {
+                        stations.put(pos, new PlateStorage(pos, 3));
+                        System.out.println("✓ PLATE STORAGE at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
+                    case 'T' -> {
+                        stations.put(pos, new TrashStation(pos));
+                        System.out.println("✓ TRASH station at (" + x + ", " + y + ")");
+                        stationCount++;
+                    }
                     case 'I' -> {
                         ingredientStoragePositions.add(pos);
+                        System.out.println("✓ INGREDIENT STORAGE marker at (" + x + ", " + y + ")");
                     }
                     case 'V' -> {
                         chefSpawns.add(pos);
-                        grid[y][x] = '.'; // Make spawn walkable
+                        grid[y][x] = '.';
+                        System.out.println("✓ CHEF SPAWN at (" + x + ", " + y + ")");
                     }
                 }
             }
         }
 
         assignRandomizedIngredients(ingredientStoragePositions);
+
+        // Print summary
+        System.out.println("===========================================");
+        System.out.println("MAP LOADING SUMMARY:");
+        System.out.println("Total stations loaded: " + stations.size());
+        System.out.println("Chef spawn points: " + chefSpawns.size());
+        System.out.println("Ingredient storage positions: " + ingredientStoragePositions.size());
+        System.out.println("===========================================");
     }
 
-    private void assignRandomizedIngredients (List<Position> positions) {
+    private void assignRandomizedIngredients(List<Position> positions) {
         IngredientType[] types = {
                 IngredientType.DOUGH,
                 IngredientType.TOMATO,
@@ -123,5 +162,19 @@ public class GameMap {
                 ((ServingCounter) station).setStage(stage);
             }
         }
+    }
+
+    private void debugPrintMapGrid(char[][] grid) {
+        System.out.println("\nMAP GRID LAYOUT:");
+        System.out.println("Legend: X=Wall, . =Floor, V=Spawn, C=Cut, R=Cook, A=Assembly, S=Serve, W=Wash, I=Ingredient, P=Plate, T=Trash");
+        System.out.println("-------------------------------------------");
+        for (int y = 0; y < GameMap.HEIGHT; y++) {
+            System.out.print("Row " + y + ": ");
+            for (int x = 0; x < GameMap.WIDTH; x++) {
+                System.out.print(grid[y][x] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("-------------------------------------------\n");
     }
 }
