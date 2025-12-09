@@ -1,6 +1,7 @@
 package models.recipe;
 
 import java.util.List;
+
 import models.item.Dish;
 import models.item.Preparable;
 
@@ -13,11 +14,20 @@ public class Recipe {
     private int basePenalty;
     private int bakeTimeSeconds;
     private boolean plateRequired;
+    private int serveTimeSeconds;
 
     public Recipe(String id, String name, String description,
                   List<RecipeIngredientRequirement> requiredComponents,
                   int baseReward, int basePenalty,
                   int bakeTimeSeconds, boolean plateRequired) {
+        this(id, name, description, requiredComponents, baseReward, basePenalty,
+                bakeTimeSeconds, plateRequired, 60);
+    }
+
+    public Recipe(String id, String name, String description,
+                  List<RecipeIngredientRequirement> requiredComponents,
+                  int baseReward, int basePenalty,
+                  int bakeTimeSeconds, boolean plateRequired, int serveTimeSeconds) {
 
         this.id = id;
         this.name = name;
@@ -27,6 +37,7 @@ public class Recipe {
         this.basePenalty = basePenalty;
         this.bakeTimeSeconds = bakeTimeSeconds;
         this.plateRequired = plateRequired;
+        this.serveTimeSeconds = serveTimeSeconds;
     }
 
     public String getId() {
@@ -65,6 +76,10 @@ public class Recipe {
         return isSatisfiedBy(dish.getComponents());
     }
 
+    public int getServeTimeSeconds() {
+        return serveTimeSeconds;
+    }
+
     public boolean isSatisfiedBy(List<Preparable> components) {
         for (RecipeIngredientRequirement req : requiredComponents) {
             int count = 0;
@@ -80,7 +95,9 @@ public class Recipe {
         return true;
     }
 
-    /** Returns missing recipe requirements */
+    /**
+     * Returns missing recipe requirements
+     */
     public List<RecipeIngredientRequirement> missingComponents(List<Preparable> components) {
         List<RecipeIngredientRequirement> missing = new java.util.ArrayList<>();
 
