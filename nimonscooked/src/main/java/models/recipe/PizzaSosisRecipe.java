@@ -2,6 +2,7 @@ package models.recipe;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import models.enums.IngredientState;
 import models.ingredients.Dough;
 import models.ingredients.Tomato;
@@ -10,16 +11,19 @@ import models.ingredients.Sausage;
 
 public class PizzaSosisRecipe extends Recipe {
 
+    public static final int SERVE_TIME_SECONDS = 90;
+
     public PizzaSosisRecipe() {
         super(
-            "PIZZA_SOSIS",
-            "Pizza Sosis",
-            "Pizza dengan adonan, tomat, keju, dan sosis.",
-            buildRequirements(),
-            150,
-            -50,
-            14,
-            true
+                "PIZZA_SOSIS",
+                "Pizza Sosis",
+                "Pizza dengan adonan, tomat, keju, dan sosis.",
+                buildRequirements(),
+                150,
+                -50,
+                14,
+                true,
+                SERVE_TIME_SECONDS
         );
     }
 
