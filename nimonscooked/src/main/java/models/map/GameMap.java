@@ -131,12 +131,21 @@ public class GameMap {
         return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
     }
 
+    public boolean inBounds(Position pos) {
+        return inBounds(pos.getX(), pos.getY());
+    }
+
     public Station getStationAt(Position pos) {
         return stations.get(pos);
     }
 
     public Station getStationAt(int x, int y) {
-        return stations.get(new Position(x, y));
+        if (!inBounds(x, y)) {
+            return null;
+        }
+
+        Position pos = new Position(x, y);
+        return stations.get(pos);
     }
 
     public List<Position> getChefSpawns() {
@@ -176,5 +185,29 @@ public class GameMap {
             System.out.println();
         }
         System.out.println("-------------------------------------------\n");
+    }
+
+    public char getTile(Position pos) {
+        return getTile(pos.getX(), pos.getY());
+    }
+
+    public boolean setTile(int x, int y, char tile) {
+        if (!inBounds(x, y)) {
+            return false;
+        }
+        grid[y][x] = tile;
+        return true;
+    }
+
+    public boolean hasStation(int x, int y) {
+        return getStationAt(x, y) != null;
+    }
+
+    public boolean isWall(int x, int y) {
+        return getTile(x, y) == 'X';
+    }
+
+    public Map<Position, Station> getStations() {
+        return stations;
     }
 }

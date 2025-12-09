@@ -14,4 +14,8 @@ public interface ChefCommand {
     boolean canExecute();
 
     String getDescription();
+
+    default String getType() {
+        return this.getClass().getSimpleName();
+    }
 }
