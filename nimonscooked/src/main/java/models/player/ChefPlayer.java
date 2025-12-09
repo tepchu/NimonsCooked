@@ -86,6 +86,9 @@ public class ChefPlayer {
         busy = true;
         currentAction = action;
 
+        busyStartTime = System.currentTimeMillis();
+        busyDurationSec = durationSec;
+
         busyThread = new Thread(() -> {
             try {
                 Thread.sleep(durationSec * 1000L);
@@ -118,7 +121,7 @@ public class ChefPlayer {
         }
         long elapsed = System.currentTimeMillis() - busyStartTime;
         long remaining = (busyDurationSec * 1000L) - elapsed;
-        return (int) Math.max(0, remaining / 1000);
+        return (int) Math.max(0, (remaining + 999) / 1000);
     }
 
     public int getBusyDuration() {
