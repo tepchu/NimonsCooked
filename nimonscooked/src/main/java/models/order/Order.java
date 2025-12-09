@@ -1,14 +1,16 @@
 package models.order;
 
+import models.recipe.Recipe;
+
 public class Order {
 
     private int position;
-    private String recipe;
+    private Recipe recipe;
     private int reward;
     private int penalty;
     private boolean completed;
 
-    public Order(int position, String recipe, int reward, int penalty){
+    public Order(int position, Recipe recipe, int reward, int penalty){
         this.position = position;
         this.recipe = recipe;
         this.reward = reward;
@@ -17,7 +19,7 @@ public class Order {
     }
 
     public int getPosition(){ return position; }
-    public String getRecipe(){ return recipe; }
+    public Recipe getRecipe(){ return recipe; }
     public int getReward(){ return reward; }
     public int getPenalty(){ return penalty; }
     public boolean isCompleted(){ return completed; }
