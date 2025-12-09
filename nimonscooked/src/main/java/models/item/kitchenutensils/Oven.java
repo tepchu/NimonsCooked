@@ -8,7 +8,7 @@ public class Oven extends KitchenUtensil implements CookingDevice {
     private PizzaDish currentPizza;
     private boolean isCooking;
     private int cookingProgress;
-    private static final int BAKE_TIME = 10;
+    private static final int BAKE_TIME = 12;
 
     public Oven() {
         super("Oven");

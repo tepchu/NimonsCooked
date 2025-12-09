@@ -341,6 +341,23 @@ public class GameView {
 
         ChefPlayer activeChef = gameStage.getActiveChef();
         if (activeChef != null) {
+            String chefStatus = "Active: " + activeChef.getName();
+            if (activeChef.isBusy()) {
+                CurrentAction action = activeChef.getCurrentAction();
+                int remaining = activeChef.getBusyTimeRemaining();
+                String actionName = switch (action) {
+                    case CUTTING -> "Cutting";
+                    case COOKING -> "Cooking";
+                    case WASHING -> "Washing";
+                    default -> "Busy";
+                };
+                chefStatus += " (" + actionName + " " + remaining + "s)";
+                chefLabel.setTextFill(Color.ORANGE);
+            } else {
+                chefLabel.setTextFill(Color.LIGHTGREEN);
+            }
+            chefLabel.setText(chefStatus);
+
             long cooldown = activeChef.getDashCooldownRemaining();
             if (cooldown > 0) {
                 dashCooldownLabel.setText("Dash: " + (cooldown / 1000.0) + "s");
@@ -844,7 +861,54 @@ public class GameView {
             String label = isActive ? "★ " + chef.getName() : chef.getName();
             gc.fillText(label, x + 5, y - 5);
             drawChefInventory(chef, x, y);
+
+            if (chef.isBusy()) {
+                drawBusyProgressBar(chef, x, y);
+            }
         }
+    }
+
+    private void drawBusyProgressBar(ChefPlayer chef, int x, int y) {
+        double progress = chef.getBusyProgress();
+        CurrentAction action = chef.getCurrentAction();
+        int timeRemaining = chef.getBusyTimeRemaining();
+
+        // Progress bar dimensions
+        int barWidth = TILE_SIZE - 4;
+        int barHeight = 8;
+        int barX = x + 2;
+        int barY = y - 20; // Above the chef name
+
+        // Background
+        gc.setFill(Color.rgb(40, 40, 40, 0.9));
+        gc.fillRoundRect(barX - 2, barY - 2, barWidth + 4, barHeight + 14, 4, 4);
+
+        // Progress bar background
+        gc.setFill(Color.rgb(60, 60, 60));
+        gc.fillRoundRect(barX, barY, barWidth, barHeight, 3, 3);
+
+        // Progress bar fill - color based on action type
+        Color progressColor = switch (action) {
+            case CUTTING -> Color.rgb(255, 165, 0);   // Orange for cutting
+            case COOKING -> Color.rgb(255, 69, 0);    // Red-Orange for cooking
+            case WASHING -> Color.rgb(30, 144, 255);  // Blue for washing
+            default -> Color.rgb(46, 204, 113);       // Green for others
+        };
+
+        gc.setFill(progressColor);
+        gc.fillRoundRect(barX, barY, barWidth * progress, barHeight, 3, 3);
+
+        // Action label and time
+        String actionLabel = switch (action) {
+            case CUTTING -> "CUTTING";
+            case COOKING -> "COOKING";
+            case WASHING -> "WASHING";
+            default -> "BUSY";
+        };
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Inter", FontWeight.BOLD, 8));
+        gc.fillText(actionLabel + " " + timeRemaining + "s", barX, barY + barHeight + 10);
     }
 
     private void drawDirectionIndicator(ChefPlayer chef, int x, int y) {

@@ -24,6 +24,9 @@ public class ChefPlayer {
     private static final long DASH_COOLDOWN_MS = 3000; // 3 second cooldown
     private static final int DASH_DISTANCE = 3; // Move 3 tiles at once
 
+    private long busyStartTime = 0;
+    private int busyDurationSec = 0;
+
     public ChefPlayer(String id, String name, Position startPos) {
         this.id = id;
         this.name = name;
@@ -39,9 +42,9 @@ public class ChefPlayer {
 
         this.direction = dir;
         switch (dir) {
-            case UP    -> position.setY(position.getY() - 1);
-            case DOWN  -> position.setY(position.getY() + 1);
-            case LEFT  -> position.setX(position.getX() - 1);
+            case UP -> position.setY(position.getY() - 1);
+            case DOWN -> position.setY(position.getY() + 1);
+            case LEFT -> position.setX(position.getX() - 1);
             case RIGHT -> position.setX(position.getX() + 1);
         }
         currentAction = CurrentAction.MOVING;
@@ -100,16 +103,50 @@ public class ChefPlayer {
         busyThread.start();
     }
 
+    public double getBusyProgress() {
+        if (!busy || busyDurationSec <= 0) {
+            return 0.0;
+        }
+        long elapsed = System.currentTimeMillis() - busyStartTime;
+        double progress = (double) elapsed / (busyDurationSec * 1000L);
+        return Math.min(1.0, Math.max(0.0, progress));
+    }
+
+    public int getBusyTimeRemaining() {
+        if (!busy || busyDurationSec <= 0) {
+            return 0;
+        }
+        long elapsed = System.currentTimeMillis() - busyStartTime;
+        long remaining = (busyDurationSec * 1000L) - elapsed;
+        return (int) Math.max(0, remaining / 1000);
+    }
+
+    public int getBusyDuration() {
+        return busyDurationSec;
+    }
+
     // ===================== INTERACTION =====================
     public void interact(Station station) {
         station.interact(this);
     }
 
     // ===================== GETTERS =====================
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public Position getPosition() { return position; }
-    public Direction getDirection() { return direction; }
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public Direction getDirection() {
+        return direction;
+    }
+
     public void setDirection(Direction dir) {
         this.direction = dir;
     }
