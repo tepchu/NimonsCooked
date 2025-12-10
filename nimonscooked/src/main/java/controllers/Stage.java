@@ -10,6 +10,7 @@ import models.map.GameMap;
 import models.map.MapType;
 import models.order.*;
 import models.recipe.*;
+import models.station.CookingStation;
 import models.station.PlateStorage;
 import models.station.Station;
 
@@ -113,6 +114,16 @@ public class Stage {
         }
         handleOrderTimeouts();
         updateOrderSpawning();
+        updateStations();
+    }
+
+    private void updateStations() {
+        Map<Position, Station> stations = gameMap.getAllStations();
+        for (Station station : stations.values()) {
+            if (station instanceof CookingStation) {
+                ((CookingStation) station).update();
+            }
+        }
     }
 
     private void handleOrderTimeouts() {

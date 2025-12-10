@@ -9,7 +9,8 @@ import models.enums.StationType;
 
 public class CookingStation extends Station {
 
-    private CookingDevice device;  // pot/pan/oven yang lagi di atas station
+    private CookingDevice device;
+    private static final int BURN_TIME = 24; // Pizza burns after 24 seconds total (12s after done)
 
     public CookingStation(Position position) {
         super(StationType.COOKING, position);
@@ -46,14 +47,40 @@ public class CookingStation extends Station {
                     plate.setDish(null);
                     oven.startCooking();
 
-                    chef.startBusy(CurrentAction.COOKING, oven.getBakeTime(), oven::finishBaking);
+                    // Chef is busy for the bake time, but oven continues after
+                    chef.startBusy(CurrentAction.COOKING, oven.getBakeTime(), () -> {
+                        oven.finishBaking();
+                        System.out.println("[OVEN] ✓ Pizza is ready! Pick it up before it burns!");
+                    });
+                }
+            } else if (plate.isClean() && !plate.hasDish()) {
+                if (oven.hasPizza()) {
+                    PizzaDish pizza = oven.getCurrentPizza();
+
+                    // Check if burned
+                    if (oven.isBurned()) {
+                        System.out.println("[OVEN] ✗ Pizza is BURNED! Pick it up to throw it away.");
+                        // Pick up burned pizza - it still goes on the plate
+                        PizzaDish burnedPizza = oven.removePizza();
+                        plate.setDish(burnedPizza);
+                        System.out.println("[OVEN] Picked up burned pizza. Take it to the trash!");
+                        return;
+                    }
+
+                    if (pizza.isBaked()) {
+                        PizzaDish bakedPizza = oven.removePizza();
+                        plate.setDish(bakedPizza);
+                        System.out.println("[OVEN] ✓ Picked up baked pizza!");
+                    } else {
+                        System.out.println("[OVEN] Pizza is still cooking...");
+                    }
                 }
             }
-            else if (plate.isClean() && !plate.hasDish()) {
-                if (oven.hasPizza() && oven.getCurrentPizza().isBaked()) {
-                    PizzaDish bakedPizza = oven.removePizza();
-                    plate.setDish(bakedPizza);
-                }
+        } else if (!chef.hasItem() && oven.hasPizza()) {
+            if (oven.isBurned()) {
+                System.out.println("[OVEN] ✗ Burned pizza! Need a plate to remove it.");
+            } else if (oven.getCurrentPizza().isBaked()) {
+                System.out.println("[OVEN] Need a plate to pick up the pizza!");
             }
         }
     }
@@ -71,6 +98,29 @@ public class CookingStation extends Station {
     public void update() {
         if (device instanceof Oven oven) {
             oven.updateCooking();
+
+            // Check for warnings
+            if (oven.isCooking()) {
+                int progress = oven.getCookingProgress();
+                int bakeTime = oven.getBakeTime();
+
+                if (progress == bakeTime) {
+                    System.out.println("[OVEN] ⚠ Pizza is DONE! Pick it up now!");
+                } else if (progress == bakeTime + 6) {
+                    System.out.println("[OVEN] ⚠⚠ WARNING! Pizza will burn in 6 seconds!");
+                } else if (progress >= BURN_TIME) {
+                    if (!oven.isBurned()) {
+                        System.out.println("[OVEN] ✗✗✗ PIZZA BURNED! ✗✗✗");
+                    }
+                }
+            }
         }
+    }
+
+    public boolean hasBurnedPizza() {
+        if (device instanceof Oven oven) {
+            return oven.isBurned();
+        }
+        return false;
     }
 }
