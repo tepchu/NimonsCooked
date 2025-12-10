@@ -1,8 +1,9 @@
 package models.level;
 
 import models.map.MapType;
+
 import java.util.ArrayList;
-import java. util.List;
+import java.util.List;
 
 public class LevelManager {
     private static LevelManager instance;
@@ -21,51 +22,51 @@ public class LevelManager {
         return instance;
     }
 
-    private void initializePredefinedLevels(){
+    private void initializePredefinedLevels() {
         predefinedLevels.add(new Level(
                 1, "Level 1 - Tutorial",
-                MapType. PIZZA,
-                180,    // 3 menit
-                200,    // target score
-                5,      // max failed orders
-                Level. Difficulty.EASY,
-                30,     // 30 sec per order spawn
+                MapType.PIZZA,
+                270,
+                200,
+                5,
+                Level.Difficulty.EASY,
+                45,
                 5,
                 60
         ));
 
-        predefinedLevels. add(new Level(
+        predefinedLevels.add(new Level(
                 2, "Level 2 - Getting Started",
                 MapType.PIZZA,
-                180,
-                350,    // target score
-                5,      // max failed orders
+                270,
+                350,
+                5,
                 Level.Difficulty.EASY,
-                30,     // 30 sec per order spawn
-                5,       // max 5 orders at once
+                45,
+                5,
                 60
         ));
 
-        predefinedLevels. add(new Level(
+        predefinedLevels.add(new Level(
                 3, "Level 3 - Warming Up",
-                MapType. PIZZA,
-                180,
+                MapType.PIZZA,
+                255,
                 500,
                 4,
                 Level.Difficulty.MEDIUM,
-                25,     // faster spawn
+                40,
                 5,
-                50      // 50 sec order timeout (MEDIUM)
+                50
         ));
 
         predefinedLevels.add(new Level(
                 4, "Level 4 - Rush Hour",
                 MapType.PIZZA,
-                150,    // less time
+                255,
                 650,
                 4,
-                Level.Difficulty. MEDIUM,
-                25,
+                Level.Difficulty.MEDIUM,
+                40,
                 5,
                 50       // max 5 orders at once
         ));
@@ -73,11 +74,11 @@ public class LevelManager {
         predefinedLevels.add(new Level(
                 5, "Level 5 - Master Chef",
                 MapType.PIZZA,
-                150,
+                225,
                 800,
                 3,
-                Level.Difficulty. HARD,
-                20,     // fastest spawn
+                Level.Difficulty.HARD,
+                30,     // fastest spawn
                 6,
                 40
         ));
@@ -91,11 +92,11 @@ public class LevelManager {
         return new Level(
                 100, "Random - Easy",
                 MapType.PIZZA,
-                180,    // 3 minutes
+                270,    // 3 minutes
                 300,
                 6,
-                Level. Difficulty.EASY,
-                30,
+                Level.Difficulty.EASY,
+                45,
                 5,
                 60
         );
@@ -105,11 +106,11 @@ public class LevelManager {
         return new Level(
                 101, "Random - Hard",
                 MapType.PIZZA,
-                120,    // 2 minutes
+                225,    // 2 minutes
                 500,
                 3,
                 Level.Difficulty.HARD,
-                20,
+                30,
                 6,
                 40
         );
