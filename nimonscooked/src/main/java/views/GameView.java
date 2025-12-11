@@ -27,11 +27,7 @@ import models.core.*;
 import models.recipe.*;
 import models.order.Order;
 import models.enums.*;
-import models.station.IngredientStorage;
 import models.item.kitchenutensils.Plate;
-import models.item.Dish;
-import models.item.Preparable;
-import models.player.CurrentAction;
 
 import java.util.*;
 
@@ -1042,34 +1038,33 @@ public class GameView {
     }
 
     private String getChefImageKey(ChefPlayer chef, boolean isChef1) {
-        if (!isChef1) {
-            return "chef2";
-        }
-
+        String chefPrefix = isChef1 ? "chef1" : "chef2";
+       
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
             case LEFT -> "left";
             case RIGHT -> "right";
         };
+
 
         // Check if chef is holding an item
         if (chef.hasItem()) {
             Item item = chef.getInventory();
             String itemSuffix = getItemImageSuffix(item);
             if (itemSuffix != null) {
-                return "chef1_" + direction + "_" + itemSuffix;
+                return chefPrefix + "_" + direction + "_" + itemSuffix;
             }
         }
 
-        return "chef1_" + direction;
+
+        return chefPrefix + "_" + direction;
     }
 
-    private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
-        if (!isChef1) {
-            return "chef2";
-        }
 
+    private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
+        String chefPrefix = isChef1 ? "chef1" : "chef2";
+       
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
@@ -1077,8 +1072,10 @@ public class GameView {
             case RIGHT -> "right";
         };
 
-        return "chef1_" + direction;
+
+        return chefPrefix + "_" + direction;
     }
+
 
     private String getItemImageSuffix(Item item) {
         if (item instanceof Plate) {
