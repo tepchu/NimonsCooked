@@ -115,11 +115,11 @@ public class DashCommand implements ChefCommand {
         }
 
         if (actualDistance > 0) {
-            currentPos.setX(finalX);
-            currentPos.setY(finalY);
             chef.setDirection(direction);
-            chef.recordDash(); // Start cooldown
+            chef.recordDash();
 
+            // Start smooth dash movement (faster than walk)
+            chef.startMove(finalX, finalY, true);
             wasExecuted = true;
 
             System.out.println("[CMD] " + chef.getName() + " dashed " + actualDistance +

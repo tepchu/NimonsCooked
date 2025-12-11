@@ -76,7 +76,7 @@ public class GameController {
 
         ChefPlayer chef = stage.getActiveChef();
         if (chef == null || chef.isBusy()) return;
-        
+
         GameMap map = stage.getGameMap();
         List<ChefPlayer> chefs = stage.getChefs();
 
@@ -183,15 +183,23 @@ public class GameController {
         }
     }
 
+    /**
+     * Handle dash input (Shift + WASD)
+     * This is called directly from GameView when shift is pressed
+     */
     public void handleDashInput(KeyCode key, boolean shiftPressed) {
         if (!shiftPressed || stage == null || !stage.isGameRunning()) return;
         if (isPaused) return;
 
         ChefPlayer activeChef = stage.getActiveChef();
         if (activeChef == null || activeChef.isBusy()) return;
-        if (!activeChef.canDash()) return;
+        if (!activeChef.canDash()) {
+            System.out.println("[DASH] Dash on cooldown!");
+            return;
+        }
 
         GameMap map = stage.getGameMap();
+        List<ChefPlayer> chefs = stage.getChefs();
         Direction dashDir = null;
 
         switch (key) {
@@ -202,69 +210,9 @@ public class GameController {
         }
 
         if (dashDir != null) {
-            attemptDash(activeChef, dashDir, map);
-        }
-    }
-
-    private void attemptDash(ChefPlayer chef, Direction dir, GameMap map) {
-        if (!chef.canDash()) {
-            System.out.println("Dash on cooldown!");
-            return;
-        }
-
-        Position currentPos = chef.getPosition();
-        int targetX = currentPos.getX();
-        int targetY = currentPos.getY();
-
-        int distance = 3;
-        switch (dir) {
-            case UP -> targetY -= distance;
-            case DOWN -> targetY += distance;
-            case LEFT -> targetX -= distance;
-            case RIGHT -> targetX += distance;
-        }
-
-        int finalX = currentPos.getX();
-        int finalY = currentPos.getY();
-
-        for (int i = 1; i <= distance; i++) {
-            int checkX = currentPos.getX();
-            int checkY = currentPos.getY();
-
-            switch (dir) {
-                case UP -> checkY -= i;
-                case DOWN -> checkY += i;
-                case LEFT -> checkX -= i;
-                case RIGHT -> checkX += i;
-            }
-
-            if (!map.isWalkable(checkX, checkY)) {
-                break;
-            }
-
-            boolean blocked = false;
-            for (ChefPlayer other : stage.getChefs()) {
-                if (other != chef) {
-                    Position otherPos = other.getPosition();
-                    if (otherPos.getX() == checkX && otherPos.getY() == checkY) {
-                        blocked = true;
-                        break;
-                    }
-                }
-            }
-
-            if (blocked) break;
-
-            finalX = checkX;
-            finalY = checkY;
-        }
-
-        if (finalX != currentPos.getX() || finalY != currentPos.getY()) {
-            currentPos.setX(finalX);
-            currentPos.setY(finalY);
-            chef.setDirection(dir);
-            chef.recordDash();
-            System.out.println("Dashed to (" + finalX + ", " + finalY + ")");
+            // Create and execute dash command
+            DashCommand dashCommand = new DashCommand(activeChef, dashDir, map, chefs);
+            commandInvoker.executeCommand(dashCommand);
         }
     }
 

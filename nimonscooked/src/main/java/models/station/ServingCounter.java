@@ -36,6 +36,12 @@ public class ServingCounter extends Station {
 
         Dish dish = plate.getDish();
 
+        // Check if pizza is burned
+        if (dish instanceof PizzaDish pizza && pizza.isBurned()) {
+            System.out.println("[SERVE] ✗ Cannot serve BURNED pizza! Take it to the trash!");
+            return;
+        }
+
         // Check if pizza is baked
         if (dish instanceof PizzaDish pizza && !pizza.isBaked()) {
             System.out.println("[SERVE] Pizza is not baked yet!");
@@ -49,9 +55,9 @@ public class ServingCounter extends Station {
         int result = stage.validateServe(dish, plate);
 
         if (result > 0) {
-            System.out.println("[SERVE] Order completed!  Reward: $" + result);
+            System.out.println("[SERVE] Order completed! Reward: $" + result);
         } else if (result < 0) {
-            System.out.println("[SERVE] Wrong dish!  Penalty: $" + Math.abs(result));
+            System.out.println("[SERVE] Wrong dish! Penalty: $" + Math.abs(result));
         } else {
             System.out.println("[SERVE] Serve failed");
         }

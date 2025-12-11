@@ -9,7 +9,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -41,7 +40,7 @@ public class GameView {
     private static final int MAP_WIDTH = GameMap.WIDTH * TILE_SIZE;
     private static final int MAP_HEIGHT = GameMap.HEIGHT * TILE_SIZE;
 
-    // Fallback colors (used when images not available)
+    // Fallback colors
     private static final Color COLOR_WALL = Color.rgb(80, 80, 80);
     private static final Color COLOR_PLAYER_ACTIVE = Color.BLACK;
     private static final Color COLOR_PLAYER_INACTIVE = Color.rgb(60, 60, 60);
@@ -71,21 +70,21 @@ public class GameView {
     private long lastUpdate = 0;
 
     private final Map<String, Image> imageCache = new HashMap<>();
-    private boolean useImages = true; // Enable image loading
+    private boolean useImages = true; // Set to true to enable images
 
     public GameView(GameController controller) {
         this.gameController = controller;
         this.gameStage = controller.getStage();
         loadImages();
     }
-    
+
     // ==================== IMAGE LOADING ====================
 
     private void loadImages() {
         System.out.println("[GameView] Loading images...");
 
         try {
-            // Load Chef1 direction images - TANPA resize saat load
+            // Load Chef1 direction images - WITHOUT resize during load
             loadImageOriginalSize("chef1_front", "/images/chef1/chef1_front.png");
             loadImageOriginalSize("chef1_back", "/images/chef1/chef1_back.png");
             loadImageOriginalSize("chef1_left", "/images/chef1/chef1_left.png");
@@ -112,7 +111,7 @@ public class GameView {
             // Load Chef1 with items - Right
             loadImageOriginalSize("chef1_right_plate", "/images/chef1/chef1_right_plate.png");
             loadImageOriginalSize("chef1_right_cheese", "/images/chef1/chef1_right_cheese.png");
-            loadImageOriginalSize("chef1_right_chicken", "/images/chef1/chef1_right_chicken. png");
+            loadImageOriginalSize("chef1_right_chicken", "/images/chef1/chef1_right_chicken.png");
             loadImageOriginalSize("chef1_right_cooked_chicken", "/images/chef1/chef1_right_cooked_chicken.png");
             loadImageOriginalSize("chef1_right_dough", "/images/chef1/chef1_right_dough.png");
             loadImageOriginalSize("chef1_right_sausage", "/images/chef1/chef1_right_sausage.png");
@@ -128,7 +127,9 @@ public class GameView {
 
             // Load Station images
             loadImageOriginalSize("station_assembly", "/images/stations/assembly.png");
+            loadImageOriginalSize("station_washing", "/images/stations/washing.png");
             loadImageOriginalSize("station_cutting", "/images/stations/cutting.png");
+            loadImageOriginalSize("floor", "/images/stations/floor.png");
             loadImageOriginalSize("wall", "/images/stations/wall.png");
 
             System.out.println("[GameView] Loaded " + imageCache.size() + " images successfully");
@@ -145,20 +146,14 @@ public class GameView {
         }
     }
 
-    /**
-     * Load image at ORIGINAL size (no resizing during load)
-     * Resizing will happen during drawing with smooth interpolation
-     */
     private void loadImageOriginalSize(String key, String path) {
         try {
             var resource = getClass().getResourceAsStream(path);
             if (resource != null) {
-                // Load at original size - NO resizing here
                 Image img = new Image(resource);
                 if (!img.isError()) {
                     imageCache.put(key, img);
-                    System.out.println("[GameView] ✓ Loaded:  " + key +
-                            " (" + (int) img.getWidth() + "x" + (int) img.getHeight() + ")");
+                    System.out.println("[GameView] ✓ Loaded: " + key);
                 } else {
                     System.out.println("[GameView] ✗ Error loading: " + path);
                 }
@@ -166,22 +161,7 @@ public class GameView {
                 System.out.println("[GameView] ✗ Not found: " + path);
             }
         } catch (Exception e) {
-            System.out.println("[GameView] ✗ Failed:  " + path + " - " + e.getMessage());
-        }
-    }
-
-
-    private void loadImageWithSize(String key, String path, int width, int height) {
-        try {
-            var resource = getClass().getResourceAsStream(path);
-            if (resource != null) {
-                Image img = new Image(resource, width, height, true, true);
-                if (!img.isError()) {
-                    imageCache.put(key, img);
-                }
-            }
-        } catch (Exception e) {
-            // Silent fail
+            System.out.println("[GameView] ✗ Failed: " + path + " - " + e.getMessage());
         }
     }
 
@@ -210,15 +190,26 @@ public class GameView {
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 showPauseMenu(primaryStage);
-            } else if (e.isShiftDown()) {
-                gameController.handleDashInput(e.getCode(), true);
-            } else {
-                gameController.handleInput(e.getCode());
+                return;
             }
+
+            // Check if Shift is held down for dash
+            if (e.isShiftDown()) {
+                // This is a dash input - handle WASD with shift
+                switch (e.getCode()) {
+                    case W, A, S, D -> {
+                        gameController.handleDashInput(e.getCode(), true);
+                        return; // Don't process as normal movement
+                    }
+                }
+            }
+
+            // Normal input (no shift)
+            gameController.handleInput(e.getCode());
         });
 
         primaryStage.setScene(scene);
-        primaryStage.setTitle("NIMONSCOOKED - Playing");
+        primaryStage.setTitle("WEARECOOKED - Playing");
         primaryStage.setResizable(false);
 
         startGameLoop(primaryStage);
@@ -230,7 +221,7 @@ public class GameView {
     private HBox createTopSection() {
         HBox topSection = new HBox(10);
         topSection.setPadding(new Insets(10));
-        topSection.setStyle("-fx-background-color:  #2A2A2A;");
+        topSection.setStyle("-fx-background-color: #2A2A2A;");
         topSection.setPrefHeight(150);
 
         orderPanel = createOrderPanel();
@@ -293,7 +284,7 @@ public class GameView {
         VBox panel = new VBox(5);
         panel.setAlignment(Pos.CENTER);
         panel.setPadding(new Insets(15));
-        panel.setStyle("-fx-background-color: #3A3A3A; -fx-background-radius:  10;");
+        panel.setStyle("-fx-background-color: #3A3A3A; -fx-background-radius: 10;");
 
         Label titleLabel = new Label("TIME");
         titleLabel.setFont(Font.font("Inter", FontWeight.BOLD, 14));
@@ -312,7 +303,7 @@ public class GameView {
         gc = canvas.getGraphicsContext2D();
 
         StackPane mapContainer = new StackPane(canvas);
-        mapContainer.setStyle("-fx-background-color:  #000000;");
+        mapContainer.setStyle("-fx-background-color: #000000;");
         mapContainer.setPadding(new Insets(5));
 
         return mapContainer;
@@ -324,11 +315,11 @@ public class GameView {
         bottom.setPadding(new Insets(10));
         bottom.setStyle("-fx-background-color: #2A2A2A;");
 
-        Label controlsLabel = new Label("W/A/S/D:  Move | Shift+WASD:  Dash | SPACE: Throw | C: Pickup/Drop | V: Interact | B: Switch Chef | ESC: Pause");
+        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C/V: Interact | B: Switch Chef | ESC: Pause");
         controlsLabel.setFont(Font.font("Inter", 12));
         controlsLabel.setTextFill(Color.LIGHTGRAY);
 
-        chefLabel = new Label("Active:  Chef 1");
+        chefLabel = new Label("Active: Chef 1");
         chefLabel.setFont(Font.font("Inter", FontWeight.BOLD, 14));
         chefLabel.setTextFill(Color.LIGHTGREEN);
 
@@ -389,7 +380,7 @@ public class GameView {
         ChefPlayer activeChef = gameStage.getActiveChef();
         if (activeChef != null) {
             String chefStatus = "Active: " + activeChef.getName();
-            if (activeChef.isBusy()) {
+            if (activeChef.isBusy() && !activeChef.isMoving()) {
                 CurrentAction action = activeChef.getCurrentAction();
                 int remaining = activeChef.getBusyTimeRemaining();
                 String actionName = switch (action) {
@@ -443,15 +434,6 @@ public class GameView {
         box.setPrefWidth(100);
         box.setStyle("-fx-background-color: #4A4A4A; -fx-background-radius: 8;");
 
-        // Add pizza image if available
-        String pizzaKey = getPizzaImageKey(order.getRecipe().getName());
-        if (useImages && hasImage(pizzaKey)) {
-            ImageView pizzaImg = new ImageView(getImage(pizzaKey));
-            pizzaImg.setFitWidth(40);
-            pizzaImg.setFitHeight(40);
-            box.getChildren().add(pizzaImg);
-        }
-
         Label nameLabel = new Label(getShortName(order.getRecipe().getName()));
         nameLabel.setFont(Font.font("Inter", FontWeight.BOLD, 10));
         nameLabel.setTextFill(Color.WHITE);
@@ -469,15 +451,6 @@ public class GameView {
         box.getChildren().addAll(nameLabel, timeLabel, ingredientsBox, progressBar);
 
         return box;
-    }
-
-    private String getPizzaImageKey(String recipeName) {
-        return switch (recipeName.toLowerCase()) {
-            case "pizza margherita" -> "pizza_margherita";
-            case "pizza sosis" -> "pizza_sosis";
-            case "pizza ayam" -> "pizza_ayam";
-            default -> "pizza_margherita";
-        };
     }
 
     private String getShortName(String fullName) {
@@ -543,6 +516,11 @@ public class GameView {
 
         GameMap map = gameStage.getGameMap();
 
+        // Update all chef movements for smooth animation
+        for (ChefPlayer chef : gameStage.getChefs()) {
+            chef.updateMovement();
+        }
+
         drawMap(map);
         drawFloorItems();
         drawPlayers();
@@ -570,6 +548,8 @@ public class GameView {
                     Color fallbackColor = getStationColor(station);
                     drawTileWithFallback(drawX, drawY, stationKey, fallbackColor);
                     drawStationLabel(drawX, drawY, station);
+                } else if (tile == '.' || tile == 'V') {
+                    drawTileWithFallback(drawX, drawY, "floor", COLOR_FLOOR);
                 } else {
                     drawTileWithFallback(drawX, drawY, "floor", COLOR_FLOOR);
                 }
@@ -584,7 +564,6 @@ public class GameView {
 
     private void drawTileWithFallback(int x, int y, String imageKey, Color fallbackColor) {
         if (useImages && hasImage(imageKey)) {
-            // Draw image scaled to tile size - gc.setImageSmoothing(true) handles quality
             gc.drawImage(getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
         } else {
             gc.setFill(fallbackColor);
@@ -698,7 +677,7 @@ public class GameView {
                 label = "TRASH";
                 labelColor = Color.RED;
             }
-            default -> label = "? ";
+            default -> label = "?";
         }
 
         // Draw label background
@@ -733,7 +712,6 @@ public class GameView {
             int y = pos.getY() * TILE_SIZE;
 
             if (item instanceof Ingredient ing) {
-                // Draw colored circle based on state
                 Color itemColor = switch (ing.getState()) {
                     case RAW -> Color.rgb(255, 140, 0);
                     case CHOPPED -> Color.rgb(255, 215, 0);
@@ -748,7 +726,6 @@ public class GameView {
                 gc.setFill(itemColor);
                 gc.fillOval(x + 12, y + 12, TILE_SIZE - 24, TILE_SIZE - 24);
 
-                // Draw state indicator
                 gc.setFill(Color.WHITE);
                 gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
                 String stateChar = switch (ing.getState()) {
@@ -764,14 +741,9 @@ public class GameView {
                 gc.fillText(shortName, x + 10, y + TILE_SIZE - 8);
 
             } else if (item instanceof Plate plate) {
-                if (useImages && hasImage("plate")) {
-                    gc.drawImage(getImage("plate"), x + 8, y + 8, TILE_SIZE - 16, TILE_SIZE - 16);
-                } else {
-                    gc.setFill(plate.isClean() ? Color.WHITE : Color.GRAY);
-                    gc.fillOval(x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
-                }
+                gc.setFill(plate.isClean() ? Color.WHITE : Color.GRAY);
+                gc.fillOval(x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
 
-                // Label
                 gc.setFill(Color.BLACK);
                 gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
                 gc.fillText(plate.isClean() ? "C" : "D", x + TILE_SIZE - 15, y + 15);
@@ -794,8 +766,9 @@ public class GameView {
         ChefPlayer activeChef = gameStage.getActiveChef();
 
         for (ChefPlayer chef : chefs) {
-            int x = chef.getPosition().getX() * TILE_SIZE;
-            int y = chef.getPosition().getY() * TILE_SIZE;
+            // Use VISUAL position for smooth animation
+            int x = (int) (chef.getVisualX() * TILE_SIZE);
+            int y = (int) (chef.getVisualY() * TILE_SIZE);
             boolean isActive = chef == activeChef;
             boolean isChef1 = chef.getName().equals("Chef 1");
 
@@ -824,11 +797,18 @@ public class GameView {
                 drawChefFallback(chef, x, y, isActive);
             }
 
-            // Active chef highlight - draw OUTSIDE the sprite
+            // Active chef highlight
             if (isActive) {
                 gc.setStroke(Color.YELLOW);
                 gc.setLineWidth(2);
                 gc.strokeRect(x - 1, y - 1, TILE_SIZE + 2, TILE_SIZE + 2);
+
+                // Add dash trail effect if dashing
+                if (chef.isDashing()) {
+                    gc.setStroke(Color.rgb(255, 255, 0, 0.5));
+                    gc.setLineWidth(3);
+                    gc.strokeRect(x - 2, y - 2, TILE_SIZE + 4, TILE_SIZE + 4);
+                }
             }
 
             // Draw chef name above
@@ -836,30 +816,23 @@ public class GameView {
             gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
             String label = isActive ? "★ " + chef.getName() : chef.getName();
 
-            // Draw text with background for readability
             double textWidth = label.length() * 6;
             gc.setFill(Color.rgb(0, 0, 0, 0.7));
             gc.fillRoundRect(x - 2, y - 18, textWidth + 4, 14, 3, 3);
             gc.setFill(isActive ? Color.YELLOW : Color.WHITE);
             gc.fillText(label, x, y - 6);
 
-            // Draw inventory label
             drawChefInventory(chef, x, y);
 
-            // Draw busy progress bar
-            if (chef.isBusy()) {
+            if (chef.isBusy() && !chef.isMoving()) {
                 drawBusyProgressBar(chef, x, y);
             }
         }
     }
 
-
-    /**
-     * Get the image key for a chef based on direction and held item
-     */
     private String getChefImageKey(ChefPlayer chef, boolean isChef1) {
         if (!isChef1) {
-            return "chef2"; // Chef2 only has one image
+            return "chef2";
         }
 
         String direction = switch (chef.getDirection()) {
@@ -878,13 +851,9 @@ public class GameView {
             }
         }
 
-        // No item or unknown item - return base direction
         return "chef1_" + direction;
     }
 
-    /**
-     * Get base image key (without item) for chef
-     */
     private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
         if (!isChef1) {
             return "chef2";
@@ -900,21 +869,16 @@ public class GameView {
         return "chef1_" + direction;
     }
 
-    /**
-     * Get the item suffix for chef image key
-     */
     private String getItemImageSuffix(Item item) {
         if (item instanceof Plate) {
             return "plate";
         } else if (item instanceof Ingredient ing) {
             String name = ing.getName().toLowerCase();
 
-            // Check for cooked chicken specifically
             if (name.contains("chicken") && ing.getState() == IngredientState.COOKED) {
                 return "cooked_chicken";
             }
 
-            // Map ingredient names to image suffixes
             if (name.contains("cheese")) return "cheese";
             if (name.contains("chicken")) return "chicken";
             if (name.contains("dough")) return "dough";
@@ -924,9 +888,6 @@ public class GameView {
         return null;
     }
 
-    /**
-     * Draw chef using fallback (colored circle)
-     */
     private void drawChefFallback(ChefPlayer chef, int x, int y, boolean isActive) {
         // Draw shadow
         gc.setFill(Color.rgb(0, 0, 0, 0.3));
@@ -1040,15 +1001,12 @@ public class GameView {
         int barX = x + 2;
         int barY = y - 20;
 
-        // Background
         gc.setFill(Color.rgb(40, 40, 40, 0.9));
         gc.fillRoundRect(barX - 2, barY - 2, barWidth + 4, barHeight + 14, 4, 4);
 
-        // Progress bar background
         gc.setFill(Color.rgb(60, 60, 60));
         gc.fillRoundRect(barX, barY, barWidth, barHeight, 3, 3);
 
-        // Progress bar fill
         Color progressColor = switch (action) {
             case CUTTING -> Color.rgb(255, 165, 0);
             case COOKING -> Color.rgb(255, 69, 0);
@@ -1059,7 +1017,6 @@ public class GameView {
         gc.setFill(progressColor);
         gc.fillRoundRect(barX, barY, barWidth * progress, barHeight, 3, 3);
 
-        // Label
         String actionLabel = switch (action) {
             case CUTTING -> "CUT";
             case COOKING -> "COOK";

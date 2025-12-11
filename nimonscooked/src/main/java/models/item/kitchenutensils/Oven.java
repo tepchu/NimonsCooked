@@ -9,12 +9,15 @@ public class Oven extends KitchenUtensil implements CookingDevice {
     private boolean isCooking;
     private int cookingProgress;
     private static final int BAKE_TIME = 12;
+    private static final int BURN_TIME = 24; // Burns after 24 seconds total
+    private boolean burned;
 
     public Oven() {
         super("Oven");
         this.currentPizza = null;
         this.isCooking = false;
         this.cookingProgress = 0;
+        this.burned = false;
     }
 
     @Override
@@ -39,6 +42,7 @@ public class Oven extends KitchenUtensil implements CookingDevice {
     public boolean placePizza(PizzaDish pizza) {
         if (canAcceptPizza(pizza)) {
             this.currentPizza = pizza;
+            this.burned = false;
             return true;
         }
         return false;
@@ -49,6 +53,7 @@ public class Oven extends KitchenUtensil implements CookingDevice {
         currentPizza = null;
         isCooking = false;
         cookingProgress = 0;
+        burned = false;
         return pizza;
     }
 
@@ -74,6 +79,7 @@ public class Oven extends KitchenUtensil implements CookingDevice {
         if (currentPizza != null && !isCooking && !currentPizza.isBaked()) {
             isCooking = true;
             cookingProgress = 0;
+            burned = false;
         }
     }
 
@@ -92,26 +98,50 @@ public class Oven extends KitchenUtensil implements CookingDevice {
     public void updateCooking() {
         if (isCooking && currentPizza != null) {
             cookingProgress++;
-            if (cookingProgress >= BAKE_TIME) {
+
+            // Pizza is done baking
+            if (cookingProgress == BAKE_TIME && !currentPizza.isBaked()) {
                 finishBaking();
+            }
+
+            // Pizza burns if left too long
+            if (cookingProgress >= BURN_TIME && !burned) {
+                burnPizza();
             }
         }
     }
 
     public void finishBaking() {
-        if (currentPizza != null && isCooking) {
+        if (currentPizza != null && !burned) {
             currentPizza.bake();
-            isCooking = false;
+            // Keep cooking to track burn time
+            System.out.println("[OVEN] Pizza finished baking!");
         }
+    }
+
+    private void burnPizza() {
+        if (currentPizza != null) {
+            burned = true;
+            currentPizza.burn(); // Mark the pizza itself as burned
+            System.out.println("[OVEN] Pizza has BURNED!");
+        }
+    }
+
+    public boolean isBurned() {
+        return burned;
     }
 
     @Override
     public void showItem() {
         if (currentPizza != null) {
-            String status = isCooking ?
-                    "Baking... (" + cookingProgress + "/" + BAKE_TIME + "s)" :
-                    (currentPizza.isBaked() ? "Ready!" : "Waiting to bake");
-            System.out.println("Oven: " + currentPizza.getDishName() + " - " + status);
+            if (burned) {
+                System.out.println("Oven: BURNED PIZZA - Remove immediately!");
+            } else {
+                String status = isCooking ?
+                        "Baking... (" + cookingProgress + "/" + BAKE_TIME + "s)" :
+                        (currentPizza.isBaked() ? "Ready! Pick up soon!" : "Waiting to bake");
+                System.out.println("Oven: " + currentPizza.getDishName() + " - " + status);
+            }
         } else {
             System.out.println("Oven: Empty");
         }
