@@ -117,8 +117,38 @@ public class GameView {
             loadImageOriginalSize("chef1_right_sausage", "/images/chef1/chef1_right_sausage.png");
             loadImageOriginalSize("chef1_right_tomato", "/images/chef1/chef1_right_tomato.png");
 
-            // Load Chef2 (Musang)
-            loadImageOriginalSize("chef2", "/images/chef2/musang.jpg");
+           // Load Chef2 direction images - WITHOUT resize during load
+            loadImageOriginalSize("chef2_front", "/images/chef2/chef2_front.png");
+            loadImageOriginalSize("chef2_back", "/images/chef2/chef2_back.png");
+            loadImageOriginalSize("chef2_left", "/images/chef2/chef2_left.png");
+            loadImageOriginalSize("chef2_right", "/images/chef2/chef2_right.png");
+
+            // Load Chef2 with items - Front
+            loadImageOriginalSize("chef2_front_plate", "/images/chef2/chef2_front_plate.png");
+            loadImageOriginalSize("chef2_front_cheese", "/images/chef2/chef2_front_cheese.png");
+            loadImageOriginalSize("chef2_front_chicken", "/images/chef2/chef2_front_chicken.png");
+            loadImageOriginalSize("chef2_front_cooked_chicken", "/images/chef2/chef2_front_cooked_chicken.png");
+            loadImageOriginalSize("chef2_front_dough", "/images/chef2/chef2_front_dough.png");
+            loadImageOriginalSize("chef2_front_sausage", "/images/chef2/chef2_front_sausage.png");
+            loadImageOriginalSize("chef2_front_tomato", "/images/chef2/chef2_front_tomato.png");
+
+            // Load Chef2 with items - Left
+            loadImageOriginalSize("chef2_left_plate", "/images/chef2/chef2_left_plate.png");
+            loadImageOriginalSize("chef2_left_cheese", "/images/chef2/chef2_left_cheese.png");
+            loadImageOriginalSize("chef2_left_chicken", "/images/chef2/chef2_left_chicken.png");
+            loadImageOriginalSize("chef2_left_cooked_chicken", "/images/chef2/chef2_left_cooked_chicken.png");
+            loadImageOriginalSize("chef2_left_dough", "/images/chef2/chef2_left_dough.png");
+            loadImageOriginalSize("chef2_left_sausage", "/images/chef2/chef2_left_sausage.png");
+            loadImageOriginalSize("chef2_left_tomato", "/images/chef2/chef2_Left_tomato.png");
+
+            // Load Chef2 with items - Right
+            loadImageOriginalSize("chef2_right_plate", "/images/chef2/chef2_right_plate.png");
+            loadImageOriginalSize("chef2_right_cheese", "/images/chef2/chef2_right_cheese.png");
+            loadImageOriginalSize("chef2_right_chicken", "/images/chef2/chef2_right_chicken.png");
+            loadImageOriginalSize("chef2_right_cooked_chicken", "/images/chef2/chef2_right_cooked_chicken.png");
+            loadImageOriginalSize("chef2_right_dough", "/images/chef2/chef2_right_dough.png");
+            loadImageOriginalSize("chef2_right_sausage", "/images/chef2/chef2_right_sausage.png");
+            loadImageOriginalSize("chef2_right_tomato", "/images/chef2/chef2_right_tomato.png");
 
             // Load individual ingredient images (RAW state)
             loadImageOriginalSize("ingredient_dough_raw", "/images/ingredients/dough_raw.png");
