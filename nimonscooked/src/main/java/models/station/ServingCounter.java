@@ -19,18 +19,47 @@ public class ServingCounter extends Station {
 
     @Override
     public void interact(ChefPlayer chef) {
-        if (chef.getInventory() instanceof Plate plate && plate.getDish() != null && plate.isClean()) {
-            Dish dish = plate.getDish();
-            if (dish instanceof PizzaDish pizza && !pizza.isBaked()) {
-                // Pizza not baked / raw
-                return;
-            }
-            stage.validateServe(dish);
-            // kalau score > 0 berarti order match
-            plate.markDirty();
-            plate.setDish(null);
-            chef.drop();
-            // piring kotor akan dikirim ke PlateStorage oleh kitchen loop (sesuai spek)
+        if (!(chef.getInventory() instanceof Plate plate)) {
+            System.out.println("[SERVE] Chef doesn't have a plate");
+            return;
+        }
+
+        if (!plate.isClean()) {
+            System.out.println("[SERVE] Plate is dirty, cannot serve");
+            return;
+        }
+
+        if (plate.getDish() == null) {
+            System.out.println("[SERVE] Plate has no dish");
+            return;
+        }
+
+        Dish dish = plate.getDish();
+
+        // Check if pizza is burned
+        if (dish instanceof PizzaDish pizza && pizza.isBurned()) {
+            System.out.println("[SERVE] ✗ Cannot serve BURNED pizza! Take it to the trash!");
+            return;
+        }
+
+        // Check if pizza is baked
+        if (dish instanceof PizzaDish pizza && !pizza.isBaked()) {
+            System.out.println("[SERVE] Pizza is not baked yet!");
+            return;
+        }
+
+        // Remove plate from chef's inventory
+        chef.drop();
+
+        // Validate and serve - pass the plate so it can be returned later
+        int result = stage.validateServe(dish, plate);
+
+        if (result > 0) {
+            System.out.println("[SERVE] Order completed! Reward: $" + result);
+        } else if (result < 0) {
+            System.out.println("[SERVE] Wrong dish! Penalty: $" + Math.abs(result));
+        } else {
+            System.out.println("[SERVE] Serve failed");
         }
     }
 

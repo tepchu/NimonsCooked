@@ -2,6 +2,7 @@ package models.recipe;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import models.enums.IngredientState;
 import models.ingredients.Dough;
 import models.ingredients.Tomato;
@@ -9,16 +10,19 @@ import models.ingredients.Cheese;
 
 public class PizzaMargheritaRecipe extends Recipe {
 
+    public static final int SERVE_TIME_SECONDS = 75;
+
     public PizzaMargheritaRecipe() {
         super(
-            "PIZZA_MARGHERITA",
-            "Pizza Margherita",
-            "Pizza klasik dengan adonan, tomat, dan keju.",
-            buildRequirements(),
-            120,
-            -50,
-            12,
-            true
+                "PIZZA_MARGHERITA",
+                "Pizza Margherita",
+                "Pizza klasik dengan adonan, tomat, dan keju.",
+                buildRequirements(),
+                120,
+                -50,
+                12,
+                true,
+                SERVE_TIME_SECONDS
         );
     }
 
