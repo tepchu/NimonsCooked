@@ -84,8 +84,8 @@ public class MoveCommand implements ChefCommand {
         }
 
         if (canMoveTo(newX, newY)) {
-            currentPos.setX(newX);
-            currentPos.setY(newY);
+            // Change to smooth movement
+            chef.startMove(newX, newY, false);
             positionChanged = true;
         } else {
             positionChanged = false;
@@ -101,9 +101,8 @@ public class MoveCommand implements ChefCommand {
             return;
         }
 
-        Position currentPos = chef.getPosition();
-        currentPos.setX(previousPosition.getX());
-        currentPos.setY(previousPosition.getY());
+        // Instant teleport for undo
+        chef.teleportTo(previousPosition.getX(), previousPosition.getY());
         chef.setDirection(previousDirection);
 
         wasExecuted = false;
