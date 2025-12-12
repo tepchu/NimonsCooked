@@ -94,7 +94,7 @@ public class MainMenuView extends Application {
         root.getChildren().addAll(bgCanvas, mainContent);
 
         Scene scene = new Scene(root, 800, 600);
-        primaryStage.setTitle("NIMONSCOOKED");
+        primaryStage.setTitle("WEARECOOKED");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();

@@ -10,9 +10,7 @@ import models.map.GameMap;
 import models.map.MapType;
 import models.order.*;
 import models.recipe.*;
-import models.station.CookingStation;
-import models.station.PlateStorage;
-import models.station.Station;
+import models.station.*;
 
 import java.util.*;
 
@@ -115,6 +113,54 @@ public class Stage {
         handleOrderTimeouts();
         updateOrderSpawning();
         updateStations();
+        updateStationProgress();
+    }
+
+    /**
+     * Update progress untuk cutting dan washing stations
+     * <p>
+     * Called every second to save progress when chef stops
+     */
+
+    private void updateStationProgress() {
+
+        Map<Position, Station> stations = gameMap.getAllStations();
+
+
+        for (ChefPlayer chef : chefs) {
+
+            // Save progress at nearby stations when chef is not busy
+
+            saveProgressAtNearbyStations(chef, stations);
+
+        }
+
+    }
+
+    /**
+     * Check adjacent cells for cutting/washing stations and save progress
+     */
+
+    private void saveProgressAtNearbyStations(ChefPlayer chef, Map<Position, Station> stations) {
+        Position chefPos = chef.getPosition();
+
+        // Check all 4 adjacent cells (up, down, left, right)
+        int[][] directions = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+
+        for (int[] dir : directions) {
+
+            int x = chefPos.getX() + dir[0];
+            int y = chefPos.getY() + dir[1];
+
+            Position adjPos = new Position(x, y);
+            Station station = stations.get(adjPos);
+
+            if (station instanceof CuttingStation cutting) {
+                cutting.saveProgress(chef);
+            } else if (station instanceof WashingStation washing) {
+                washing.saveProgress(chef);
+            }
+        }
     }
 
     private void updateStations() {

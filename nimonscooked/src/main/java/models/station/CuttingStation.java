@@ -78,8 +78,14 @@ public class CuttingStation extends Station {
         // ========== CUTTING FUNCTIONS ==========
 
         // Case 5: Start or continue cutting
+        // Case 5: Start or continue cutting
         if (chefItem instanceof Ingredient ing && ing.canBeChopped()) {
-            handleCutting(chef, ing);
+            // Check if continuing same ingredient
+            if (ingredientBeingCut == ing && savedProgress > 0) {
+                continueCutting(chef, ing);
+            } else {
+                startCutting(chef, ing);
+            }
             return;
         }
 
@@ -96,29 +102,16 @@ public class CuttingStation extends Station {
     }
 
     /**
-     * Handle cutting with progress saving
+     * Start cutting new ingredient
      */
-    private void handleCutting(ChefPlayer chef, Ingredient ing) {
-        // Check if this is the same ingredient being continued
-        boolean continuingProgress = (ingredientBeingCut == ing && savedProgress > 0);
-
-        int remainingTime;
-        if (continuingProgress) {
-            // Continue from saved progress
-            remainingTime = CUT_DURATION_SEC - (savedProgress / 1000);
-            System.out.println("[CUTTING] Continuing cut progress: " + remainingTime + "s remaining");
-        } else {
-            // New cutting operation
-            remainingTime = CUT_DURATION_SEC;
-            ingredientBeingCut = ing;
-            savedProgress = 0;
-            System.out.println("[CUTTING] Starting new cut: " + CUT_DURATION_SEC + "s");
-        }
-
+    private void startCutting(ChefPlayer chef, Ingredient ing) {
+        ingredientBeingCut = ing;
+        savedProgress = 0;
         lastCutTime = System.currentTimeMillis();
 
-        chef.startBusy(CurrentAction.CUTTING, remainingTime, () -> {
-            // Cutting completed
+        System.out.println("[CUTTING] Starting new cut: " + CUT_DURATION_SEC + "s");
+
+        chef.startBusy(CurrentAction.CUTTING, CUT_DURATION_SEC, () -> {
             ing.chop();
             ingredientBeingCut = null;
             savedProgress = 0;
@@ -127,19 +120,39 @@ public class CuttingStation extends Station {
     }
 
     /**
-     * Save progress when chef becomes not busy
-     * This should be called by GameController/Stage periodically
+     * Continue cutting with saved progress
      */
-    public void updateProgress(ChefPlayer chef) {
-        if (ingredientBeingCut != null && chef.getInventory() == ingredientBeingCut) {
-            if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.CUTTING) {
-                // Chef is actively cutting - calculate elapsed time
-                long elapsed = System.currentTimeMillis() - lastCutTime;
-                savedProgress = Math.min((int) elapsed, CUT_DURATION_SEC * 1000);
-            } else if (!chef.isBusy() && savedProgress > 0) {
-                // Chef stopped cutting but progress is saved
-                System.out.println("[CUTTING] Progress saved: " + (savedProgress / 1000) + "s / " + CUT_DURATION_SEC + "s");
-            }
+    private void continueCutting(ChefPlayer chef, Ingredient ing) {
+        int remainingTime = CUT_DURATION_SEC - (savedProgress / 1000);
+        lastCutTime = System.currentTimeMillis();
+
+        System.out.println("[CUTTING] Continuing cut: " + remainingTime + "s remaining (saved: " + savedProgress / 1000 + "s)");
+
+        chef.startBusy(CurrentAction.CUTTING, remainingTime, () -> {
+            ing.chop();
+            ingredientBeingCut = null;
+            savedProgress = 0;
+            System.out.println("[CUTTING] ✓ Cutting complete!");
+        });
+    }
+
+    /**
+     * Save progress when chef leaves or stops cutting
+     * This is called by Stage.update()
+     */
+    public void saveProgress(ChefPlayer chef) {
+        if (ingredientBeingCut == null) return;
+        if (chef.getInventory() != ingredientBeingCut) return;
+
+        if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.CUTTING) {
+            // Chef is actively cutting - update elapsed time
+            long elapsed = System.currentTimeMillis() - lastCutTime;
+            savedProgress += (int) elapsed;
+            savedProgress = Math.min(savedProgress, CUT_DURATION_SEC * 1000);
+            lastCutTime = System.currentTimeMillis();
+        } else if (!chef.isBusy() && savedProgress > 0) {
+            // Chef stopped cutting - progress is already saved
+            System.out.println("[CUTTING] Progress saved: " + (savedProgress / 1000) + "s / " + CUT_DURATION_SEC + "s");
         }
     }
 
