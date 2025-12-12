@@ -121,7 +121,7 @@ public class ImageManager {
             loadImage("station_assembly", "/images/stations/assembly.png");
             loadImage("station_washing", "/images/stations/washing.png");
             loadImage("station_cutting", "/images/stations/cutting.png");
-            loadImage("station_cooking", "/images/stations/cooking.png");
+            loadImage("station_cooking", "/images/stations/oven.png");
             loadImage("station_serving", "/images/stations/serving.png");
             loadImage("station_plate", "/images/stations/plate.png");
             loadImage("station_trash", "/images/stations/trash.png");
