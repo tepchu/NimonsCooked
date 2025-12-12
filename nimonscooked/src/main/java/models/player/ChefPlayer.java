@@ -202,6 +202,34 @@ public class ChefPlayer {
         return busyDurationSec;
     }
 
+    /**
+     * Interrupt busy action and save elapsed time
+     * Returns elapsed time in seconds
+     */
+    public int interruptBusy() {
+        if (!busy || busyThread == null) return 0;
+
+        busyThread.interrupt();
+        busy = false;
+
+        long elapsed = System.currentTimeMillis() - busyStartTime;
+        int elapsedSec = (int) (elapsed / 1000);
+
+        currentAction = CurrentAction.IDLE;
+
+        System.out.println("[CHEF] Interrupted " + currentAction + " - elapsed: " + elapsedSec + "s");
+        return elapsedSec;
+    }
+
+    /**
+     * Get elapsed busy time without interrupting
+     */
+    public int getBusyElapsedTime() {
+        if (!busy) return 0;
+        long elapsed = System.currentTimeMillis() - busyStartTime;
+        return (int) (elapsed / 1000);
+    }
+
     // ===================== INTERACTION =====================
     public void interact(Station station) {
         station.interact(this);

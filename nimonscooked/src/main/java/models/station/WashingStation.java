@@ -66,8 +66,17 @@ public class WashingStation extends Station {
         }
 
         // Case 2: Chef starts/continues washing (must be at wash side, empty handed)
-        if (!chef.hasItem() && dirtyPlateBeingWashed != null && !chef.isBusy()) {
-            handleWashing(chef);
+        if (!chef.hasItem() && dirtyPlateBeingWashed != null) {
+            if (chef.isBusy()) {
+                System.out.println("[WASHING] Chef is busy with other action");
+                return;
+            }
+
+            if (savedProgress > 0) {
+                continueWashing(chef);
+            } else {
+                startWashing(chef);
+            }
             return;
         }
 
@@ -95,22 +104,34 @@ public class WashingStation extends Station {
         System.out.println("[WASHING] No clean plates available");
     }
 
-    private void handleWashing(ChefPlayer chef) {
-        boolean continuingProgress = (savedProgress > 0);
-
-        int remainingTime;
-        if (continuingProgress) {
-            remainingTime = WASH_DURATION_SEC - (savedProgress / 1000);
-            System.out.println("[WASHING] Continuing wash: " + remainingTime + "s remaining");
-        } else {
-            remainingTime = WASH_DURATION_SEC;
-            System.out.println("[WASHING] Starting wash: " + WASH_DURATION_SEC + "s");
-        }
-
+    /**
+     * Start washing new plate
+     */
+    private void startWashing(ChefPlayer chef) {
+        savedProgress = 0;
         lastWashTime = System.currentTimeMillis();
 
+        System.out.println("[WASHING] Starting wash: " + WASH_DURATION_SEC + "s");
+
+        chef.startBusy(CurrentAction.WASHING, WASH_DURATION_SEC, () -> {
+            dirtyPlateBeingWashed.setClean(true);
+            cleanPlatesStack.push(dirtyPlateBeingWashed);
+            dirtyPlateBeingWashed = null;
+            savedProgress = 0;
+            System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
+        });
+    }
+
+    /**
+     * Continue washing with saved progress
+     */
+    private void continueWashing(ChefPlayer chef) {
+        int remainingTime = WASH_DURATION_SEC - (savedProgress / 1000);
+        lastWashTime = System.currentTimeMillis();
+
+        System.out.println("[WASHING] Continuing wash: " + remainingTime + "s remaining (saved: " + savedProgress / 1000 + "s)");
+
         chef.startBusy(CurrentAction.WASHING, remainingTime, () -> {
-            // Washing completed - plate appears at clean side
             dirtyPlateBeingWashed.setClean(true);
             cleanPlatesStack.push(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
@@ -125,14 +146,22 @@ public class WashingStation extends Station {
         return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
     }
 
-    public void updateProgress(ChefPlayer chef) {
-        if (dirtyPlateBeingWashed != null) {
-            if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.WASHING) {
-                long elapsed = System.currentTimeMillis() - lastWashTime;
-                savedProgress = Math.min((int) elapsed, WASH_DURATION_SEC * 1000);
-            } else if (!chef.isBusy() && savedProgress > 0) {
-                System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s / " + WASH_DURATION_SEC + "s");
-            }
+    /**
+     * Save progress when chef leaves or stops washing
+     * This is called by Stage.update()
+     */
+    public void saveProgress(ChefPlayer chef) {
+        if (dirtyPlateBeingWashed == null) return;
+
+        if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.WASHING) {
+            // Chef is actively washing - update elapsed time
+            long elapsed = System.currentTimeMillis() - lastWashTime;
+            savedProgress += (int) elapsed;
+            savedProgress = Math.min(savedProgress, WASH_DURATION_SEC * 1000);
+            lastWashTime = System.currentTimeMillis();
+        } else if (!chef.isBusy() && savedProgress > 0) {
+            // Chef stopped washing - progress is already saved
+            System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s / " + WASH_DURATION_SEC + "s");
         }
     }
 

@@ -8,7 +8,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
@@ -29,6 +28,7 @@ import models.recipe.*;
 import models.order.Order;
 import models.enums.*;
 import models.item.kitchenutensils.Plate;
+import utils.ImageManager;
 
 import java.util.*;
 
@@ -39,8 +39,6 @@ public class GameView {
 
     // Fallback colors
     private static final Color COLOR_WALL = Color.rgb(80, 80, 80);
-    private static final Color COLOR_PLAYER_ACTIVE = Color.BLACK;
-    private static final Color COLOR_PLAYER_INACTIVE = Color.rgb(60, 60, 60);
     private static final Color COLOR_FLOOR = Color.rgb(200, 180, 150);
     private static final Color COLOR_CUTTING = Color.RED;
     private static final Color COLOR_COOKING = Color.BLUE;
@@ -55,6 +53,7 @@ public class GameView {
     private Canvas canvas;
     private GraphicsContext gc;
     private controllers.Stage gameStage;
+    private ImageManager imageManager;
 
     // HUD Components
     private VBox orderPanel;
@@ -66,163 +65,10 @@ public class GameView {
     private AnimationTimer gameLoop;
     private long lastUpdate = 0;
 
-    private final Map<String, Image> imageCache = new HashMap<>();
-    private boolean useImages = true; // Set to true to enable images
-
     public GameView(GameController controller) {
         this.gameController = controller;
         this.gameStage = controller.getStage();
-        loadImages();
-    }
-
-    // ==================== IMAGE LOADING ====================
-
-    private void loadImages() {
-        System.out.println("[GameView] Loading images...");
-
-        try {
-            // Load Chef1 direction images - WITHOUT resize during load
-            loadImageOriginalSize("chef1_front", "/images/chef1/chef1_front.png");
-            loadImageOriginalSize("chef1_back", "/images/chef1/chef1_back.png");
-            loadImageOriginalSize("chef1_left", "/images/chef1/chef1_left.png");
-            loadImageOriginalSize("chef1_right", "/images/chef1/chef1_right.png");
-
-            // Load Chef1 with items - Front
-            loadImageOriginalSize("chef1_front_plate", "/images/chef1/chef1_front_plate.png");
-            loadImageOriginalSize("chef1_front_cheese", "/images/chef1/chef1_front_cheese.png");
-            loadImageOriginalSize("chef1_front_chicken", "/images/chef1/chef1_front_chicken.png");
-            loadImageOriginalSize("chef1_front_cooked_chicken", "/images/chef1/chef1_front_cooked_chicken.png");
-            loadImageOriginalSize("chef1_front_dough", "/images/chef1/chef1_front_dough.png");
-            loadImageOriginalSize("chef1_front_sausage", "/images/chef1/chef1_front_sausage.png");
-            loadImageOriginalSize("chef1_front_tomato", "/images/chef1/chef1_front_tomato.png");
-
-            // Load Chef1 with items - Left
-            loadImageOriginalSize("chef1_left_plate", "/images/chef1/chef1_left_plate.png");
-            loadImageOriginalSize("chef1_left_cheese", "/images/chef1/chef1_left_cheese.png");
-            loadImageOriginalSize("chef1_left_chicken", "/images/chef1/chef1_left_chicken.png");
-            loadImageOriginalSize("chef1_left_cooked_chicken", "/images/chef1/chef1_left_cooked_chicken.png");
-            loadImageOriginalSize("chef1_left_dough", "/images/chef1/chef1_left_dough.png");
-            loadImageOriginalSize("chef1_left_sausage", "/images/chef1/chef1_left_sausage.png");
-            loadImageOriginalSize("chef1_left_tomato", "/images/chef1/chef1_Left_tomato.png");
-
-            // Load Chef1 with items - Right
-            loadImageOriginalSize("chef1_right_plate", "/images/chef1/chef1_right_plate.png");
-            loadImageOriginalSize("chef1_right_cheese", "/images/chef1/chef1_right_cheese.png");
-            loadImageOriginalSize("chef1_right_chicken", "/images/chef1/chef1_right_chicken.png");
-            loadImageOriginalSize("chef1_right_cooked_chicken", "/images/chef1/chef1_right_cooked_chicken.png");
-            loadImageOriginalSize("chef1_right_dough", "/images/chef1/chef1_right_dough.png");
-            loadImageOriginalSize("chef1_right_sausage", "/images/chef1/chef1_right_sausage.png");
-            loadImageOriginalSize("chef1_right_tomato", "/images/chef1/chef1_right_tomato.png");
-
-           // Load Chef2 direction images - WITHOUT resize during load
-            loadImageOriginalSize("chef2_front", "/images/chef2/chef2_front.png");
-            loadImageOriginalSize("chef2_back", "/images/chef2/chef2_back.png");
-            loadImageOriginalSize("chef2_left", "/images/chef2/chef2_left.png");
-            loadImageOriginalSize("chef2_right", "/images/chef2/chef2_right.png");
-
-            // Load Chef2 with items - Front
-            loadImageOriginalSize("chef2_front_plate", "/images/chef2/chef2_front_plate.png");
-            loadImageOriginalSize("chef2_front_cheese", "/images/chef2/chef2_front_cheese.png");
-            loadImageOriginalSize("chef2_front_chicken", "/images/chef2/chef2_front_chicken.png");
-            loadImageOriginalSize("chef2_front_cooked_chicken", "/images/chef2/chef2_front_cooked_chicken.png");
-            loadImageOriginalSize("chef2_front_dough", "/images/chef2/chef2_front_dough.png");
-            loadImageOriginalSize("chef2_front_sausage", "/images/chef2/chef2_front_sausage.png");
-            loadImageOriginalSize("chef2_front_tomato", "/images/chef2/chef2_front_tomato.png");
-
-            // Load Chef2 with items - Left
-            loadImageOriginalSize("chef2_left_plate", "/images/chef2/chef2_left_plate.png");
-            loadImageOriginalSize("chef2_left_cheese", "/images/chef2/chef2_left_cheese.png");
-            loadImageOriginalSize("chef2_left_chicken", "/images/chef2/chef2_left_chicken.png");
-            loadImageOriginalSize("chef2_left_cooked_chicken", "/images/chef2/chef2_left_cooked_chicken.png");
-            loadImageOriginalSize("chef2_left_dough", "/images/chef2/chef2_left_dough.png");
-            loadImageOriginalSize("chef2_left_sausage", "/images/chef2/chef2_left_sausage.png");
-            loadImageOriginalSize("chef2_left_tomato", "/images/chef2/chef2_Left_tomato.png");
-
-            // Load Chef2 with items - Right
-            loadImageOriginalSize("chef2_right_plate", "/images/chef2/chef2_right_plate.png");
-            loadImageOriginalSize("chef2_right_cheese", "/images/chef2/chef2_right_cheese.png");
-            loadImageOriginalSize("chef2_right_chicken", "/images/chef2/chef2_right_chicken.png");
-            loadImageOriginalSize("chef2_right_cooked_chicken", "/images/chef2/chef2_right_cooked_chicken.png");
-            loadImageOriginalSize("chef2_right_dough", "/images/chef2/chef2_right_dough.png");
-            loadImageOriginalSize("chef2_right_sausage", "/images/chef2/chef2_right_sausage.png");
-            loadImageOriginalSize("chef2_right_tomato", "/images/chef2/chef2_right_tomato.png");
-
-            // Load individual ingredient images (RAW state)
-            loadImageOriginalSize("ingredient_dough_raw", "/images/ingredients/dough_raw.png");
-            loadImageOriginalSize("ingredient_tomato_raw", "/images/ingredients/tomato_raw.png");
-            loadImageOriginalSize("ingredient_cheese_raw", "/images/ingredients/cheese_raw.png");
-            loadImageOriginalSize("ingredient_sausage_raw", "/images/ingredients/sausage_raw.png");
-            loadImageOriginalSize("ingredient_chicken_raw", "/images/ingredients/chicken_raw.png");
-
-            // Load individual ingredient images (CHOPPED state)
-            loadImageOriginalSize("ingredient_dough_chopped", "/images/ingredients/dough_chopped.png");
-            loadImageOriginalSize("ingredient_tomato_chopped", "/images/ingredients/tomato_chopped.png");
-            loadImageOriginalSize("ingredient_cheese_chopped", "/images/ingredients/cheese_chopped.png");
-            loadImageOriginalSize("ingredient_sausage_chopped", "/images/ingredients/sausage_chopped.png");
-            loadImageOriginalSize("ingredient_chicken_chopped", "/images/ingredients/chicken_chopped.png");
-
-            // Load Pizza images
-            loadImageOriginalSize("pizza_margherita", "/images/pizza/pizza_margherita.png");
-            loadImageOriginalSize("pizza_sosis", "/images/pizza/pizza_sosis.png");
-            loadImageOriginalSize("pizza_ayam", "/images/pizza/pizza_ayam.png");
-            loadImageOriginalSize("pizza_burned", "/images/pizza/pizza_burned.png");
-
-            // Load Station images
-            loadImageOriginalSize("station_assembly", "/images/stations/assembly.png");
-            loadImageOriginalSize("station_washing", "/images/stations/washing.png");
-            loadImageOriginalSize("station_cutting", "/images/stations/cutting.png");
-            loadImageOriginalSize("station_ingredient_tomato", "/images/stations/tomato_storage.png");
-            loadImageOriginalSize("station_ingredient_cheese", "/images/stations/cheese_storage.png");
-            loadImageOriginalSize("station_ingredient_dough", "/images/stations/dough_storage.png");
-            loadImageOriginalSize("station_ingredient_sausage", "/images/stations/sausage_storage.png");
-            loadImageOriginalSize("station_ingredient_chicken", "/images/stations/chicken_storage.png");
-            loadImageOriginalSize("floor", "/images/stations/floor.png");
-            loadImageOriginalSize("wall", "/images/stations/wall.png");
-
-            // Load plate (dirty, clean)
-            loadImageOriginalSize("plate_empty", "/images/utensils/plate.png");
-            loadImageOriginalSize("plate_dirty", "/images/utensils/plate_dirty.png");
-
-
-            System.out.println("[GameView] Loaded " + imageCache.size() + " images successfully");
-
-            if (imageCache.isEmpty()) {
-                useImages = false;
-                System.out.println("[GameView] No images loaded, using fallback colors");
-            }
-
-        } catch (Exception e) {
-            useImages = false;
-            System.out.println("[GameView] Failed to load images: " + e.getMessage());
-            System.out.println("[GameView] Using fallback colors");
-        }
-    }
-
-    private void loadImageOriginalSize(String key, String path) {
-        try {
-            var resource = getClass().getResourceAsStream(path);
-            if (resource != null) {
-                Image img = new Image(resource);
-                if (!img.isError()) {
-                    imageCache.put(key, img);
-                    System.out.println("[GameView] ✓ Loaded: " + key);
-                } else {
-                    System.out.println("[GameView] ✗ Error loading: " + path);
-                }
-            } else {
-                System.out.println("[GameView] ✗ Not found: " + path);
-            }
-        } catch (Exception e) {
-            System.out.println("[GameView] ✗ Failed: " + path + " - " + e.getMessage());
-        }
-    }
-
-    private Image getImage(String key) {
-        return imageCache.get(key);
-    }
-
-    private boolean hasImage(String key) {
-        return imageCache.containsKey(key) && imageCache.get(key) != null;
+        this.imageManager = ImageManager.getInstance();
     }
 
     // ==================== SHOW ====================
@@ -487,8 +333,8 @@ public class GameView {
         box.setStyle("-fx-background-color: #4A4A4A; -fx-background-radius: 8;");
 
         String pizzaImageKey = getPizzaImageKeyFromRecipe(order.getRecipe());
-        if (useImages && pizzaImageKey != null && hasImage(pizzaImageKey)) {
-            ImageView pizzaView = new ImageView(getImage(pizzaImageKey));
+        if (imageManager.isUsingImages() && pizzaImageKey != null && imageManager.hasImage(pizzaImageKey)) {
+            ImageView pizzaView = new ImageView(imageManager.getImage(pizzaImageKey));
             pizzaView.setFitWidth(50);
             pizzaView.setFitHeight(50);
             pizzaView.setPreserveRatio(true);
@@ -662,8 +508,8 @@ public class GameView {
     }
 
     private void drawTileWithFallback(int x, int y, String imageKey, Color fallbackColor) {
-        if (useImages && hasImage(imageKey)) {
-            gc.drawImage(getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
+        if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+            gc.drawImage(imageManager.getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
         } else {
             gc.setFill(fallbackColor);
             gc.fillRect(x, y, TILE_SIZE, TILE_SIZE);
@@ -681,7 +527,6 @@ public class GameView {
                     case DOUGH -> "station_ingredient_dough";
                     case SAUSAGE -> "station_ingredient_sausage";
                     case CHICKEN -> "station_ingredient_chicken";
-                    default -> "station_ingredient";
                 };
             }
             return "station_ingredient";
@@ -713,7 +558,8 @@ public class GameView {
     }
 
     private void drawStationLabel(int x, int y, Station station) {
-        String label;
+
+        String label = "";
         Color labelColor = Color.WHITE;
 
         if (station instanceof AssemblyStation assembly) {
@@ -757,6 +603,11 @@ public class GameView {
         // Draw label background
         gc.setFill(Color.rgb(0, 0, 0, 0.7));
         gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
+
+        // Draw label text
+        gc.setFill(labelColor);
+        gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
+        gc.fillText(label, x + 4, y + TILE_SIZE - 5);
     }
 
     private void drawWashingStationVisual(int x, int y, WashingStation washStation) {
@@ -776,8 +627,8 @@ public class GameView {
             if (washStation.hasDirtyPlate()) {
                 Plate dirtyPlate = washStation.getDirtyPlateBeingWashed();
 
-                if (useImages && hasImage("plate_dirty")) {
-                    gc.drawImage(getImage("plate_dirty"), centerX - 20, centerY - 20, 40, 40);
+                if (imageManager.isUsingImages() && imageManager.hasImage("plate_dirty")) {
+                    gc.drawImage(imageManager.getImage("plate_dirty"), centerX - 20, centerY - 20, 40, 40);
                 } else {
                     gc.setFill(Color.GRAY);
                     gc.fillOval(centerX - 20, centerY - 20, 40, 40);
@@ -809,8 +660,8 @@ public class GameView {
                 for (int i = 0; i < Math.min(cleanCount, 3); i++) {
                     int offsetY = i * 3;
 
-                    if (useImages && hasImage("plate_empty")) {
-                        gc.drawImage(getImage("plate_empty"),
+                    if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                        gc.drawImage(imageManager.getImage("plate_empty"),
                                 centerX - 18, centerY - 18 - offsetY, 36, 36);
                     } else {
                         gc.setFill(Color.WHITE);
@@ -855,8 +706,8 @@ public class GameView {
         // Draw plate first if exists
         if (storage.hasPlate()) {
             Plate plate = storage.getPlateOnStation();
-            if (useImages && hasImage("plate_empty")) {
-                gc.drawImage(getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
+            if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                gc.drawImage(imageManager.getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
             } else {
                 gc.setFill(Color.WHITE);
                 gc.fillOval(centerX - 20, centerY - 20, 40, 40);
@@ -884,8 +735,8 @@ public class GameView {
         if (assembly.hasPlate()) {
             Plate plate = assembly.getPlateOnStation();
 
-            if (useImages && hasImage("plate_empty")) {
-                gc.drawImage(getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
+            if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                gc.drawImage(imageManager.getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
             } else {
                 // Fallback: draw circle for plate
                 gc.setFill(Color.WHITE);
@@ -931,8 +782,8 @@ public class GameView {
         if (cutting.hasPlate()) {
             Plate plate = cutting.getPlateOnStation();
 
-            if (useImages && hasImage("plate_empty")) {
-                gc.drawImage(getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
+            if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                gc.drawImage(imageManager.getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
             } else {
                 gc.setFill(Color.WHITE);
                 gc.fillOval(centerX - 20, centerY - 20, 40, 40);
@@ -972,8 +823,8 @@ public class GameView {
             int drawX = centerX - 15 + stackOffset;
             int drawY = centerY - 15 - (i * 3); // Naik 3 pixel per ingredient
 
-            if (useImages && hasImage(imageKey)) {
-                gc.drawImage(getImage(imageKey), drawX, drawY, 30, 30);
+            if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+                gc.drawImage(imageManager.getImage(imageKey), drawX, drawY, 30, 30);
             } else {
                 // Fallback: colored circles
                 Color ingColor = getIngredientColor(ing);
@@ -1031,9 +882,9 @@ public class GameView {
             imageKey = pizzaType;
         }
 
-        if (useImages && imageKey != null && hasImage(imageKey)) {
+        if (imageManager.isUsingImages() && imageKey != null && imageManager.hasImage(imageKey)) {
             // Draw pizza image (ukuran lebih besar dari plate)
-            gc.drawImage(getImage(imageKey), centerX - 22, centerY - 22, 44, 44);
+            gc.drawImage(imageManager.getImage(imageKey), centerX - 22, centerY - 22, 44, 44);
         } else {
             // Fallback: draw colored circle
             Color pizzaColor = pizza.isBurned() ? Color.rgb(50, 25, 0) : Color.rgb(255, 140, 0);
@@ -1092,20 +943,41 @@ public class GameView {
             int y = pos.getY() * TILE_SIZE;
 
             if (item instanceof Ingredient ing) {
-                Color itemColor = switch (ing.getState()) {
-                    case RAW -> Color.rgb(255, 140, 0);
-                    case CHOPPED -> Color.rgb(255, 215, 0);
-                    case COOKED -> Color.rgb(34, 139, 34);
-                    case BURNED -> Color.rgb(139, 0, 0);
-                    default -> Color.ORANGE;
-                };
+                // Get ingredient image key
+                String name = ing.getName().toLowerCase();
+                String state = ing.getState() == IngredientState.RAW ? "raw" : "chopped";
 
-                gc.setFill(Color.rgb(255, 255, 255, 0.3));
-                gc.fillRect(x + 5, y + 5, TILE_SIZE - 10, TILE_SIZE - 10);
+                String ingredientName;
+                if (name.contains("dough")) ingredientName = "dough";
+                else if (name.contains("tomato")) ingredientName = "tomato";
+                else if (name.contains("cheese")) ingredientName = "cheese";
+                else if (name.contains("sausage")) ingredientName = "sausage";
+                else if (name.contains("chicken")) ingredientName = "chicken";
+                else ingredientName = "unknown";
 
-                gc.setFill(itemColor);
-                gc.fillOval(x + 12, y + 12, TILE_SIZE - 24, TILE_SIZE - 24);
+                String imageKey = "ingredient_" + ingredientName + "_" + state;
 
+                if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+                    // Draw ingredient image
+                    gc.drawImage(imageManager.getImage(imageKey), x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+                } else {
+                    // Fallback to colored circle
+                    Color itemColor = switch (ing.getState()) {
+                        case RAW -> Color.rgb(255, 140, 0);
+                        case CHOPPED -> Color.rgb(255, 215, 0);
+                        case COOKED -> Color.rgb(34, 139, 34);
+                        case BURNED -> Color.rgb(139, 0, 0);
+                        default -> Color.ORANGE;
+                    };
+
+                    gc.setFill(Color.rgb(255, 255, 255, 0.3));
+                    gc.fillRect(x + 5, y + 5, TILE_SIZE - 10, TILE_SIZE - 10);
+
+                    gc.setFill(itemColor);
+                    gc.fillOval(x + 12, y + 12, TILE_SIZE - 24, TILE_SIZE - 24);
+                }
+
+                // Draw state indicator
                 gc.setFill(Color.WHITE);
                 gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
                 String stateChar = switch (ing.getState()) {
@@ -1121,8 +993,16 @@ public class GameView {
                 gc.fillText(shortName, x + 10, y + TILE_SIZE - 8);
 
             } else if (item instanceof Plate plate) {
-                gc.setFill(plate.isClean() ? Color.WHITE : Color.GRAY);
-                gc.fillOval(x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+                // Try to use plate image
+                String plateKey = plate.isClean() ? "plate_empty" : "plate_dirty";
+
+                if (imageManager.isUsingImages() && imageManager.hasImage(plateKey)) {
+                    gc.drawImage(imageManager.getImage(plateKey), x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+                } else {
+                    // Fallback
+                    gc.setFill(plate.isClean() ? Color.WHITE : Color.GRAY);
+                    gc.fillOval(x + 10, y + 10, TILE_SIZE - 20, TILE_SIZE - 20);
+                }
 
                 gc.setFill(Color.BLACK);
                 gc.setFont(Font.font("Arial", FontWeight.BOLD, 8));
@@ -1157,23 +1037,23 @@ public class GameView {
 
             boolean imageDrawn = false;
 
-            if (useImages && hasImage(imageKey)) {
-            // Draw chef image - smoothly scaled
-            gc.drawImage(getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
-            imageDrawn = true;
-} 
-            // ⭐ UBAH: Fallback untuk SEMUA chef, bukan hanya Chef1
-            else if (useImages) {
+            if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+                // Draw chef image - smoothly scaled
+                gc.drawImage(imageManager.getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
+                imageDrawn = true;
+            }
+            // UBAH: Fallback untuk SEMUA chef, bukan hanya Chef1
+            else if (imageManager.isUsingImages()) {
                 // Try base direction image (without item)
                 String baseKey = getChefBaseImageKey(chef, isChef1);
-                if (hasImage(baseKey)) {
-                    gc.drawImage(getImage(baseKey), x, y, TILE_SIZE, TILE_SIZE);
+                if (imageManager.hasImage(baseKey)) {
+                    gc.drawImage(imageManager.getImage(baseKey), x, y, TILE_SIZE, TILE_SIZE);
                     imageDrawn = true;
                 }
             }
             // Fallback terakhir: gambar bulatan
-            else if (useImages && !isChef1 && hasImage("chef2")) {
-                gc.drawImage(getImage("chef2"), x, y, TILE_SIZE, TILE_SIZE);
+            else if (imageManager.isUsingImages() && !isChef1 && imageManager.hasImage("chef2")) {
+                gc.drawImage(imageManager.getImage("chef2"), x, y, TILE_SIZE, TILE_SIZE);
                 imageDrawn = true;
             }
 
@@ -1215,8 +1095,9 @@ public class GameView {
     }
 
     private String getChefImageKey(ChefPlayer chef, boolean isChef1) {
+        // UBAH: karena pas load image untuk chef2, tetep gak muncul di gamenya
         String chefPrefix = isChef1 ? "chef1" : "chef2";
-       
+
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
@@ -1240,8 +1121,9 @@ public class GameView {
 
 
     private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
+        // UBAH: karena pas load image untuk chef2, tetep gak muncul di gamenya
         String chefPrefix = isChef1 ? "chef1" : "chef2";
-       
+
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
@@ -1264,11 +1146,13 @@ public class GameView {
                 return "cooked_chicken";
             }
 
-            if (name.contains("cheese")) return "cheese";
-            if (name.contains("chicken")) return "chicken";
-            if (name.contains("dough")) return "dough";
-            if (name.contains("sausage")) return "sausage";
-            if (name.contains("tomato")) return "tomato";
+            if (name.contains("cheese") && ing.getState() == IngredientState.RAW) return "cheese_raw";
+            if (name.contains("cheese") && ing.getState() == IngredientState.CHOPPED) return "cheese_chopped";
+            if (name.contains("chicken") && ing.getState() == IngredientState.RAW) return "chicken_raw";
+            if (name.contains("dough") && ing.getState() == IngredientState.RAW) return "dough_raw";
+            if (name.contains("sausage") && ing.getState() == IngredientState.RAW) return "sausage_raw";
+            if (name.contains("tomato") && ing.getState() == IngredientState.RAW) return "tomato_raw";
+
         }
         return null;
     }
@@ -1343,8 +1227,8 @@ public class GameView {
                     drawFinishedPizza(iconX + 8, iconY + 8, pizza);
                 } else {
                     // Show plate + stacked ingredients
-                    if (useImages && hasImage("plate_empty")) {
-                        gc.drawImage(getImage("plate_empty"), iconX, iconY, 16, 16);
+                    if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                        gc.drawImage(imageManager.getImage("plate_empty"), iconX, iconY, 16, 16);
                     } else {
                         gc.setFill(Color.WHITE);
                         gc.fillOval(iconX, iconY, 16, 16);
@@ -1364,8 +1248,8 @@ public class GameView {
                 }
             } else {
                 // Empty plate
-                if (useImages && hasImage("plate_empty")) {
-                    gc.drawImage(getImage("plate_empty"), iconX, iconY, 16, 16);
+                if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
+                    gc.drawImage(imageManager.getImage("plate_empty"), iconX, iconY, 16, 16);
                 } else {
                     gc.setFill(plate.isClean() ? Color.WHITE : Color.GRAY);
                     gc.fillOval(iconX, iconY, 16, 16);
@@ -1389,8 +1273,8 @@ public class GameView {
             int iconY = y - 18;
 
             String imageKey = getIngredientImageKey(ing);
-            if (useImages && hasImage(imageKey)) {
-                gc.drawImage(getImage(imageKey), iconX, iconY, 16, 16);
+            if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+                gc.drawImage(imageManager.getImage(imageKey), iconX, iconY, 16, 16);
             } else {
                 Color ingColor = getIngredientColor(ing);
                 gc.setFill(ingColor);
@@ -1416,7 +1300,21 @@ public class GameView {
             gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
             gc.fillText(displayText, x + 2, y + TILE_SIZE + 13);
         } else {
-            // Other items - existing code
+            // TAMBAHKAN: Draw icon untuk item lain (tomato, dll)
+            int iconX = x + TILE_SIZE - 18;
+            int iconY = y - 18;
+
+            // Draw generic item icon
+            gc.setFill(Color.ORANGE);
+            gc.fillRect(iconX, iconY, 16, 16);
+
+            // Draw first letter of item name
+            gc.setFill(Color.WHITE);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            String firstLetter = item.getName().substring(0, 1).toUpperCase();
+            gc.fillText(firstLetter, iconX + 4, iconY + 12);
+
+            // Draw text label below (kode yang sudah ada)
             String displayText = item.getName().substring(0, Math.min(6, item.getName().length()));
             int boxWidth = Math.max(TILE_SIZE, displayText.length() * 6 + 10);
 

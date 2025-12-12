@@ -43,15 +43,15 @@ public class CookingStation extends Station {
         if (chefItem instanceof Plate plate) {
             if (plate.getDish() instanceof PizzaDish pizza && !pizza.isBaked()) {
                 if (oven.isEmpty()) {
+                    // Place pizza in oven
                     oven.placePizza(pizza);
                     plate.setDish(null);
                     oven.startCooking();
 
-                    // Chef is busy for the bake time, but oven continues after
-                    chef.startBusy(CurrentAction.COOKING, oven.getBakeTime(), () -> {
-                        oven.finishBaking();
-                        System.out.println("[OVEN] ✓ Pizza is ready! Pick it up before it burns!");
-                    });
+                    // Chef is NOT busy - oven works automatically!
+                    System.out.println("[OVEN] Pizza placed in oven - now baking automatically");
+                    System.out.println("[OVEN] Pizza will be ready in " + oven.getBakeTime() + " seconds");
+                    return;
                 }
             } else if (plate.isClean() && !plate.hasDish()) {
                 if (oven.hasPizza()) {

@@ -94,7 +94,7 @@ public class MainMenuView extends Application {
         root.getChildren().addAll(bgCanvas, mainContent);
 
         Scene scene = new Scene(root, 800, 600);
-        primaryStage.setTitle("NIMONSCOOKED");
+        primaryStage.setTitle("WEARECOOKED");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
@@ -393,7 +393,8 @@ public class MainMenuView extends Application {
         VBox controlsBox = createSection("CONTROLS",
                 "W/A/S/D - Move chef\n" +
                         "Shift + W/A/S/D - Dash (3 tiles)\n" +
-                        "C or V - Interact with station\n" +
+                        "X - Interact with station\n" +
+                        "C - Pick up or drop items\n" +
                         "SPACE - Throw ingredient\n" +
                         "B - Switch between chefs\n" +
                         "ESC - Pause game\n" +

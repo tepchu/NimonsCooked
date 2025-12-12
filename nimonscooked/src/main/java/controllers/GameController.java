@@ -87,7 +87,8 @@ public class GameController {
             case S -> command = new MoveCommand(chef, Direction.DOWN, map, chefs);
             case A -> command = new MoveCommand(chef, Direction.LEFT, map, chefs);
             case D -> command = new MoveCommand(chef, Direction.RIGHT, map, chefs);
-            case C, V -> command = new InteractCommand(chef, map, itemsOnFloor);
+            case C -> command = new PickupDropCommand(chef, map, itemsOnFloor);
+            case X -> command = new InteractCommand(chef, map, itemsOnFloor);
             case SPACE -> command = new ThrowCommand(chef, map, chefs, itemsOnFloor);
             case Z -> {
                 commandInvoker.undo();
