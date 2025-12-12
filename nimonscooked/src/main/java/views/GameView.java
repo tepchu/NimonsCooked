@@ -1088,6 +1088,7 @@ public class GameView {
     }
 
     private String getChefImageKey(ChefPlayer chef, boolean isChef1) {
+        //⭐ UBAH: karena pas load image untuk chef2, tetep gak muncul di gamenya
         String chefPrefix = isChef1 ? "chef1" : "chef2";
        
         String direction = switch (chef.getDirection()) {
@@ -1113,6 +1114,7 @@ public class GameView {
 
 
     private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
+        //⭐ UBAH: karena pas load image untuk chef2, tetep gak muncul di gamenya
         String chefPrefix = isChef1 ? "chef1" : "chef2";
        
         String direction = switch (chef.getDirection()) {
@@ -1289,7 +1291,21 @@ public class GameView {
             gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
             gc.fillText(displayText, x + 2, y + TILE_SIZE + 13);
         } else {
-            // Other items - existing code
+            // ⭐ TAMBAHKAN: Draw icon untuk item lain (apple, dll)
+            int iconX = x + TILE_SIZE - 18;
+            int iconY = y - 18;
+            
+            // Draw generic item icon
+            gc.setFill(Color.ORANGE);
+            gc.fillRect(iconX, iconY, 16, 16);
+            
+            // Draw first letter of item name
+            gc.setFill(Color.WHITE);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            String firstLetter = item.getName().substring(0, 1).toUpperCase();
+            gc.fillText(firstLetter, iconX + 4, iconY + 12);
+
+            // Draw text label below (kode yang sudah ada)
             String displayText = item.getName().substring(0, Math.min(6, item.getName().length()));
             int boxWidth = Math.max(TILE_SIZE, displayText.length() * 6 + 10);
 
