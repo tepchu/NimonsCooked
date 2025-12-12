@@ -5,42 +5,172 @@ import models.player.CurrentAction;
 import models.item.kitchenutensils.Plate;
 import models.core.Position;
 import models.enums.StationType;
+import models.item.*;
+
+import java.util.Stack;
 
 public class WashingStation extends Station {
 
     public static final int WASH_DURATION_SEC = 3;
 
-    private Plate dirtyStackTop; // simpel: anggap cuma satu stack posisi ini
-    private Plate cleanStackTop;
+    private Position washPosition;      // Left/first block - for washing
+    private Position cleanPosition;     // Right/second block - for clean plates
 
+    private Plate dirtyPlateBeingWashed;
+    private Stack<Plate> cleanPlatesStack; // Stack of clean plates at clean position
+
+    private int savedProgress; // Progress in milliseconds
+    private long lastWashTime;
+
+    public WashingStation(Position washPos, Position cleanPos) {
+        super(StationType.WASHING, washPos); // Main position is wash position
+        this.washPosition = washPos;
+        this.cleanPosition = cleanPos;
+        this.cleanPlatesStack = new Stack<>();
+        this.savedProgress = 0;
+        this.lastWashTime = 0;
+    }
+
+    // Keep old constructor for backwards compatibility
     public WashingStation(Position position) {
-        super(StationType.WASHING, position);
+        this(position, new Position(position.getX() + 1, position.getY()));
     }
 
     @Override
     public void interact(ChefPlayer chef) {
-        // letakkan piring kotor ke stack dirty
-        if (chef.getInventory() instanceof Plate p && !p.isClean()) {
-            // stack sederhana: tumpuk di atas
-            p.setDish(null);
-            p.markDirty();
-            dirtyStackTop = p;
-            chef.drop();
-        }
-        // cuci 1 plate kotor dari dirty stack
-        else if (!chef.isBusy() && dirtyStackTop != null) {
-            Plate toWash = dirtyStackTop;
+        Position chefPos = chef.getPosition();
+        Item chefItem = chef.getInventory();
 
-            chef.startBusy(CurrentAction.WASHING, WASH_DURATION_SEC, () -> {
-                toWash.setClean(true);
-                cleanStackTop = toWash;
-                dirtyStackTop = null; // versi simple
-            });
+        // Determine which side chef is interacting with
+        boolean atWashSide = isAdjacentTo(chefPos, washPosition);
+        boolean atCleanSide = isAdjacentTo(chefPos, cleanPosition);
+
+        if (atWashSide) {
+            handleWashSideInteraction(chef, chefItem);
+        } else if (atCleanSide) {
+            handleCleanSideInteraction(chef, chefItem);
+        } else {
+            System.out.println("[WASHING] Not adjacent to washing station");
         }
-        // ambil plate bersih dari clean stack
-        else if (chef.getInventory() == null && cleanStackTop != null) {
-            chef.pickUp(cleanStackTop);
-            cleanStackTop = null;
+    }
+
+    private void handleWashSideInteraction(ChefPlayer chef, Item chefItem) {
+        // Case 1: Chef places dirty plate to wash
+        if (chefItem instanceof Plate plate && !plate.isClean() && dirtyPlateBeingWashed == null) {
+            chef.drop();
+            dirtyPlateBeingWashed = plate;
+            dirtyPlateBeingWashed.setDish(null); // Remove any dish
+            savedProgress = 0;
+            System.out.println("[WASHING] Dirty plate placed for washing");
+            return;
         }
+
+        // Case 2: Chef starts/continues washing (must be at wash side, empty handed)
+        if (!chef.hasItem() && dirtyPlateBeingWashed != null && !chef.isBusy()) {
+            handleWashing(chef);
+            return;
+        }
+
+        // Case 3: Chef picks up unfinished dirty plate
+        if (!chef.hasItem() && dirtyPlateBeingWashed != null && !chef.isBusy()) {
+            chef.pickUp(dirtyPlateBeingWashed);
+            dirtyPlateBeingWashed = null;
+            savedProgress = 0;
+            System.out.println("[WASHING] Picked up unfinished dirty plate");
+            return;
+        }
+
+        System.out.println("[WASHING] No valid wash side interaction");
+    }
+
+    private void handleCleanSideInteraction(ChefPlayer chef, Item chefItem) {
+        // Case 1: Chef picks up clean plate from stack
+        if (!chef.hasItem() && !cleanPlatesStack.isEmpty()) {
+            Plate cleanPlate = cleanPlatesStack.pop();
+            chef.pickUp(cleanPlate);
+            System.out.println("[WASHING] Picked up clean plate. Remaining: " + cleanPlatesStack.size());
+            return;
+        }
+
+        System.out.println("[WASHING] No clean plates available");
+    }
+
+    private void handleWashing(ChefPlayer chef) {
+        boolean continuingProgress = (savedProgress > 0);
+
+        int remainingTime;
+        if (continuingProgress) {
+            remainingTime = WASH_DURATION_SEC - (savedProgress / 1000);
+            System.out.println("[WASHING] Continuing wash: " + remainingTime + "s remaining");
+        } else {
+            remainingTime = WASH_DURATION_SEC;
+            System.out.println("[WASHING] Starting wash: " + WASH_DURATION_SEC + "s");
+        }
+
+        lastWashTime = System.currentTimeMillis();
+
+        chef.startBusy(CurrentAction.WASHING, remainingTime, () -> {
+            // Washing completed - plate appears at clean side
+            dirtyPlateBeingWashed.setClean(true);
+            cleanPlatesStack.push(dirtyPlateBeingWashed);
+            dirtyPlateBeingWashed = null;
+            savedProgress = 0;
+            System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
+        });
+    }
+
+    private boolean isAdjacentTo(Position chefPos, Position targetPos) {
+        int dx = Math.abs(chefPos.getX() - targetPos.getX());
+        int dy = Math.abs(chefPos.getY() - targetPos.getY());
+        return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+    }
+
+    public void updateProgress(ChefPlayer chef) {
+        if (dirtyPlateBeingWashed != null) {
+            if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.WASHING) {
+                long elapsed = System.currentTimeMillis() - lastWashTime;
+                savedProgress = Math.min((int) elapsed, WASH_DURATION_SEC * 1000);
+            } else if (!chef.isBusy() && savedProgress > 0) {
+                System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s / " + WASH_DURATION_SEC + "s");
+            }
+        }
+    }
+
+    // Getters
+    public Position getWashPosition() {
+        return washPosition;
+    }
+
+    public Position getCleanPosition() {
+        return cleanPosition;
+    }
+
+    public Plate getDirtyPlateBeingWashed() {
+        return dirtyPlateBeingWashed;
+    }
+
+    public Stack<Plate> getCleanPlatesStack() {
+        return cleanPlatesStack;
+    }
+
+    public int getCleanPlateCount() {
+        return cleanPlatesStack.size();
+    }
+
+    public int getSavedProgress() {
+        return savedProgress;
+    }
+
+    public double getWashProgressPercent() {
+        if (dirtyPlateBeingWashed == null) return 0.0;
+        return (double) savedProgress / (WASH_DURATION_SEC * 1000);
+    }
+
+    public boolean hasDirtyPlate() {
+        return dirtyPlateBeingWashed != null;
+    }
+
+    public boolean hasCleanPlates() {
+        return !cleanPlatesStack.isEmpty();
     }
 }

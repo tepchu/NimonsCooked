@@ -367,7 +367,7 @@ public class GameView {
         bottom.setPadding(new Insets(10));
         bottom.setStyle("-fx-background-color: #2A2A2A;");
 
-        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C/V: Interact | B: Switch Chef | ESC: Pause");
+        Label controlsLabel = new Label("W/A/S/D: Move | Shift+WASD: Dash | SPACE: Throw | C: Pickup/Drop | X: Interact | B: Switch Chef | ESC: Pause");
         controlsLabel.setFont(Font.font("Inter", 12));
         controlsLabel.setTextFill(Color.LIGHTGRAY);
 
@@ -608,6 +608,8 @@ public class GameView {
         char[][] grid = map.getGrid();
         Map<Position, Station> stations = map.getAllStations();
 
+        Set<WashingStation> drawnWashingStations = new HashSet<>();
+
         for (int y = 0; y < GameMap.HEIGHT; y++) {
             for (int x = 0; x < GameMap.WIDTH; x++) {
                 int drawX = x * TILE_SIZE;
@@ -620,13 +622,34 @@ public class GameView {
                 if (tile == 'X') {
                     drawTileWithFallback(drawX, drawY, "wall", COLOR_WALL);
                 } else if (station != null) {
-                    String stationKey = getStationImageKey(station);
-                    Color fallbackColor = getStationColor(station);
-                    drawTileWithFallback(drawX, drawY, stationKey, fallbackColor);
-                    drawStationLabel(drawX, drawY, station);
+                    if (station instanceof WashingStation washStation) {
+                        if (!drawnWashingStations.contains(washStation)) {
+                            // Draw both blocks of the washing station
+                            Position washPos = washStation.getWashPosition();
+                            Position cleanPos = washStation.getCleanPosition();
+
+                            // Draw wash side
+                            drawTileWithFallback(washPos.getX() * TILE_SIZE, washPos.getY() * TILE_SIZE,
+                                    "station_washing", COLOR_WASHING);
+                            drawWashingStationVisual(washPos.getX() * TILE_SIZE, washPos.getY() * TILE_SIZE,
+                                    washStation);
+
+                            // Draw clean side
+                            drawTileWithFallback(cleanPos.getX() * TILE_SIZE, cleanPos.getY() * TILE_SIZE,
+                                    "station_washing", COLOR_WASHING);
+                            drawWashingStationVisual(cleanPos.getX() * TILE_SIZE, cleanPos.getY() * TILE_SIZE,
+                                    washStation);
+
+                            drawnWashingStations.add(washStation);
+                        }
+                    } else {
+                        // Regular station rendering
+                        String stationKey = getStationImageKey(station);
+                        Color fallbackColor = getStationColor(station);
+                        drawTileWithFallback(drawX, drawY, stationKey, fallbackColor);
+                        drawStationLabel(drawX, drawY, station);
+                    }
                 } else if (tile == '.' || tile == 'V') {
-                    drawTileWithFallback(drawX, drawY, "floor", COLOR_FLOOR);
-                } else {
                     drawTileWithFallback(drawX, drawY, "floor", COLOR_FLOOR);
                 }
 
@@ -692,13 +715,14 @@ public class GameView {
     private void drawStationLabel(int x, int y, Station station) {
         String label;
         Color labelColor = Color.WHITE;
-        String extraInfo = "";
 
         if (station instanceof AssemblyStation assembly) {
             drawAssemblyStationVisual(x, y, assembly);
             return;
         } else if (station instanceof CuttingStation cutting) {
             drawCuttingStationVisual(x, y, cutting);
+            return;
+        } else if (station instanceof WashingStation washStation) {
             return;
         }
 
@@ -711,17 +735,12 @@ public class GameView {
                 label = "SERVE";
                 labelColor = Color.GOLD;
             }
-            case WASHING -> {
-                label = "WASH";
-                labelColor = Color.LIGHTBLUE;
-            }
             case INGREDIENT_STORAGE -> {
                 if (station instanceof IngredientStorage storage) {
-                    IngredientType type = storage.getIngredientType();
-                    label = type.name().substring(0, Math.min(4, type.name().length()));
-                    labelColor = Color.ORANGE;
-                } else {
-                    label = "ING";
+                    // Draw the station image/color first
+                    // Then draw any plate/ingredients on top
+                    drawIngredientStorageVisual(x, y, storage);
+                    return;
                 }
             }
             case PLATE_STORAGE -> {
@@ -738,20 +757,122 @@ public class GameView {
         // Draw label background
         gc.setFill(Color.rgb(0, 0, 0, 0.7));
         gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
+    }
 
-        // Draw label text
-        gc.setFill(labelColor);
-        gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
-        gc.fillText(label, x + 4, y + TILE_SIZE - 5);
+    private void drawWashingStationVisual(int x, int y, WashingStation washStation) {
+        Position currentPos = new Position(x / TILE_SIZE, y / TILE_SIZE);
+        Position washPos = washStation.getWashPosition();
+        Position cleanPos = washStation.getCleanPosition();
 
-        // Draw extra info
-        if (!extraInfo.isEmpty()) {
-            gc.setFill(Color.rgb(0, 0, 0, 0.8));
-            gc.fillRect(x + 2, y + 2, TILE_SIZE - 4, 12);
-            gc.setFill(Color.CYAN);
-            gc.setFont(Font.font("Inter", FontWeight.BOLD, 8));
-            gc.fillText(extraInfo, x + 4, y + 11);
+        boolean isWashSide = currentPos.equals(washPos);
+        boolean isCleanSide = currentPos.equals(cleanPos);
+
+        if (isWashSide) {
+            // Draw WASH side
+            int centerX = x + TILE_SIZE / 2;
+            int centerY = y + TILE_SIZE / 2;
+
+            // Draw dirty plate being washed
+            if (washStation.hasDirtyPlate()) {
+                Plate dirtyPlate = washStation.getDirtyPlateBeingWashed();
+
+                if (useImages && hasImage("plate_dirty")) {
+                    gc.drawImage(getImage("plate_dirty"), centerX - 20, centerY - 20, 40, 40);
+                } else {
+                    gc.setFill(Color.GRAY);
+                    gc.fillOval(centerX - 20, centerY - 20, 40, 40);
+                }
+
+                // Draw progress bar if washing
+                double progress = washStation.getWashProgressPercent();
+                if (progress > 0) {
+                    drawProgressBar(centerX - 20, centerY + 25, 40, progress);
+                }
+            }
+
+            // Draw label
+            gc.setFill(Color.rgb(0, 0, 0, 0.7));
+            gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
+            gc.setFill(Color.LIGHTBLUE);
+            gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
+            gc.fillText("WASH", x + 4, y + TILE_SIZE - 5);
+
+        } else if (isCleanSide) {
+            // Draw CLEAN side
+            int centerX = x + TILE_SIZE / 2;
+            int centerY = y + TILE_SIZE / 2;
+
+            // Draw stack of clean plates
+            int cleanCount = washStation.getCleanPlateCount();
+            if (cleanCount > 0) {
+                // Draw stacked plates
+                for (int i = 0; i < Math.min(cleanCount, 3); i++) {
+                    int offsetY = i * 3;
+
+                    if (useImages && hasImage("plate_empty")) {
+                        gc.drawImage(getImage("plate_empty"),
+                                centerX - 18, centerY - 18 - offsetY, 36, 36);
+                    } else {
+                        gc.setFill(Color.WHITE);
+                        gc.fillOval(centerX - 18, centerY - 18 - offsetY, 36, 36);
+                    }
+                }
+
+                // Draw count
+                if (cleanCount > 1) {
+                    gc.setFill(Color.rgb(0, 0, 0, 0.8));
+                    gc.fillRoundRect(x + TILE_SIZE - 20, y + 5, 15, 15, 3, 3);
+                    gc.setFill(Color.WHITE);
+                    gc.setFont(Font.font("Inter", FontWeight.BOLD, 10));
+                    gc.fillText(String.valueOf(cleanCount), x + TILE_SIZE - 16, y + 16);
+                }
+            }
+
+            // Draw label
+            gc.setFill(Color.rgb(0, 0, 0, 0.7));
+            gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
+            gc.setFill(Color.LIGHTGREEN);
+            gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
+            gc.fillText("CLEAN", x + 4, y + TILE_SIZE - 5);
         }
+    }
+
+    // Helper to draw progress bar
+    private void drawProgressBar(int x, int y, int width, double progress) {
+        // Background
+        gc.setFill(Color.rgb(60, 60, 60));
+        gc.fillRoundRect(x, y, width, 6, 3, 3);
+
+        // Progress
+        gc.setFill(Color.rgb(30, 144, 255));
+        gc.fillRoundRect(x, y, width * progress, 6, 3, 3);
+    }
+
+    private void drawIngredientStorageVisual(int x, int y, IngredientStorage storage) {
+        int centerX = x + TILE_SIZE / 2;
+        int centerY = y + TILE_SIZE / 2;
+
+        // Draw plate first if exists
+        if (storage.hasPlate()) {
+            Plate plate = storage.getPlateOnStation();
+            if (useImages && hasImage("plate_empty")) {
+                gc.drawImage(getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
+            } else {
+                gc.setFill(Color.WHITE);
+                gc.fillOval(centerX - 20, centerY - 20, 40, 40);
+            }
+        }
+
+        // Draw ingredients on top
+        List<Ingredient> ingredients = storage.getIngredientsOnStation();
+        if (!ingredients.isEmpty()) {
+            drawStackedIngredients(centerX, centerY, ingredients);
+        }
+
+        // Draw label
+        IngredientType type = storage.getIngredientType();
+        String label = type.name().substring(0, Math.min(4, type.name().length()));
+        drawStationLabelOnly(x, y, label, Color.ORANGE);
     }
 
     // Draw Assembly Station with visual stacking
@@ -775,6 +896,7 @@ public class GameView {
             if (plate.hasDish() && plate.getDish() instanceof PizzaDish pizza) {
                 if (pizza.isBaked()) {
                     drawFinishedPizza(centerX, centerY, pizza);
+                    drawStationLabelOnly(x, y, "PIZZA", Color.ORANGE);
                     return; // Pizza sudah jadi, tidak perlu draw ingredients
                 }
             }
@@ -786,13 +908,10 @@ public class GameView {
             drawStackedIngredients(centerX, centerY, ingredients);
         }
 
-        // Draw label
-        gc.setFill(Color.rgb(0, 0, 0, 0.7));
-        gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
-        gc.setFill(Color.LIGHTGREEN);
-        gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
-
+        // Draw label at the bottom
         String label = "ASSEM";
+        Color labelColor = Color.LIGHTGREEN;
+
         if (assembly.hasPlate() && assembly.hasIngredient()) {
             label = "P+" + ingredients.size();
         } else if (assembly.hasPlate()) {
@@ -800,7 +919,8 @@ public class GameView {
         } else if (assembly.hasIngredient()) {
             label = "ING:" + ingredients.size();
         }
-        gc.fillText(label, x + 4, y + TILE_SIZE - 5);
+
+        drawStationLabelOnly(x, y, label, labelColor);
     }
 
     private void drawCuttingStationVisual(int x, int y, CuttingStation cutting) {
@@ -826,11 +946,18 @@ public class GameView {
         }
 
         // Draw label
+        drawStationLabelOnly(x, y, "CUT", Color.WHITE);
+    }
+
+    private void drawStationLabelOnly(int x, int y, String label, Color labelColor) {
+        // Draw label background
         gc.setFill(Color.rgb(0, 0, 0, 0.7));
         gc.fillRect(x + 2, y + TILE_SIZE - 16, TILE_SIZE - 4, 14);
-        gc.setFill(Color.WHITE);
+
+        // Draw label text
+        gc.setFill(labelColor);
         gc.setFont(Font.font("Inter", FontWeight.BOLD, 9));
-        gc.fillText("CUT", x + 4, y + TILE_SIZE - 5);
+        gc.fillText(label, x + 4, y + TILE_SIZE - 5);
     }
 
     // Draw ingredients yang di-stack (berlapis)
@@ -864,7 +991,7 @@ public class GameView {
         }
     }
 
-    // ⭐ STEP 6: Get ingredient image key berdasarkan nama & state
+    // Get ingredient image key berdasarkan nama & state
     private String getIngredientImageKey(Ingredient ing) {
         String name = ing.getName().toLowerCase();
         String state = ing.getState() == IngredientState.RAW ? "raw" : "chopped";
