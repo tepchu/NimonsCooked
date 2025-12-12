@@ -33,8 +33,9 @@ public class AssemblyStation extends Station {
             return;
         }
 
-        // Case 2: Chef places a chopped ingredient on station (can stack multiple)
-        if (chefItem instanceof Ingredient ing && ing.getState() == IngredientState.CHOPPED) {
+        // Case 2: Chef places a chopped and raw ingredient on station (can stack multiple)
+        if (chefItem instanceof Ingredient ing && 
+            (ing.getState() == IngredientState.CHOPPED || ing.getState() == IngredientState.RAW)) {
             chef.drop();
             ingredientsOnStation.add(ing);
             System.out.println("[ASSEMBLY] Added " + ing.getName() + " to station.  Total ingredients: " + ingredientsOnStation.size());

@@ -28,11 +28,7 @@ import models.core.*;
 import models.recipe.*;
 import models.order.Order;
 import models.enums.*;
-import models.station.IngredientStorage;
 import models.item.kitchenutensils.Plate;
-import models.item.Dish;
-import models.item.Preparable;
-import models.player.CurrentAction;
 
 import java.util.*;
 
@@ -118,8 +114,38 @@ public class GameView {
             loadImageOriginalSize("chef1_right_sausage", "/images/chef1/chef1_right_sausage.png");
             loadImageOriginalSize("chef1_right_tomato", "/images/chef1/chef1_right_tomato.png");
 
-            // Load Chef2 (Musang)
-            loadImageOriginalSize("chef2", "/images/chef2/musang.jpg");
+           // Load Chef2 direction images - WITHOUT resize during load
+            loadImageOriginalSize("chef2_front", "/images/chef2/chef2_front.png");
+            loadImageOriginalSize("chef2_back", "/images/chef2/chef2_back.png");
+            loadImageOriginalSize("chef2_left", "/images/chef2/chef2_left.png");
+            loadImageOriginalSize("chef2_right", "/images/chef2/chef2_right.png");
+
+            // Load Chef2 with items - Front
+            loadImageOriginalSize("chef2_front_plate", "/images/chef2/chef2_front_plate.png");
+            loadImageOriginalSize("chef2_front_cheese", "/images/chef2/chef2_front_cheese.png");
+            loadImageOriginalSize("chef2_front_chicken", "/images/chef2/chef2_front_chicken.png");
+            loadImageOriginalSize("chef2_front_cooked_chicken", "/images/chef2/chef2_front_cooked_chicken.png");
+            loadImageOriginalSize("chef2_front_dough", "/images/chef2/chef2_front_dough.png");
+            loadImageOriginalSize("chef2_front_sausage", "/images/chef2/chef2_front_sausage.png");
+            loadImageOriginalSize("chef2_front_tomato", "/images/chef2/chef2_front_tomato.png");
+
+            // Load Chef2 with items - Left
+            loadImageOriginalSize("chef2_left_plate", "/images/chef2/chef2_left_plate.png");
+            loadImageOriginalSize("chef2_left_cheese", "/images/chef2/chef2_left_cheese.png");
+            loadImageOriginalSize("chef2_left_chicken", "/images/chef2/chef2_left_chicken.png");
+            loadImageOriginalSize("chef2_left_cooked_chicken", "/images/chef2/chef2_left_cooked_chicken.png");
+            loadImageOriginalSize("chef2_left_dough", "/images/chef2/chef2_left_dough.png");
+            loadImageOriginalSize("chef2_left_sausage", "/images/chef2/chef2_left_sausage.png");
+            loadImageOriginalSize("chef2_left_tomato", "/images/chef2/chef2_Left_tomato.png");
+
+            // Load Chef2 with items - Right
+            loadImageOriginalSize("chef2_right_plate", "/images/chef2/chef2_right_plate.png");
+            loadImageOriginalSize("chef2_right_cheese", "/images/chef2/chef2_right_cheese.png");
+            loadImageOriginalSize("chef2_right_chicken", "/images/chef2/chef2_right_chicken.png");
+            loadImageOriginalSize("chef2_right_cooked_chicken", "/images/chef2/chef2_right_cooked_chicken.png");
+            loadImageOriginalSize("chef2_right_dough", "/images/chef2/chef2_right_dough.png");
+            loadImageOriginalSize("chef2_right_sausage", "/images/chef2/chef2_right_sausage.png");
+            loadImageOriginalSize("chef2_right_tomato", "/images/chef2/chef2_right_tomato.png");
 
             // Load individual ingredient images (RAW state)
             loadImageOriginalSize("ingredient_dough_raw", "/images/ingredients/dough_raw.png");
@@ -1132,17 +1158,21 @@ public class GameView {
             boolean imageDrawn = false;
 
             if (useImages && hasImage(imageKey)) {
-                // Draw chef image - smoothly scaled
-                gc.drawImage(getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
-                imageDrawn = true;
-            } else if (useImages && isChef1) {
-                // Try base direction image
+            // Draw chef image - smoothly scaled
+            gc.drawImage(getImage(imageKey), x, y, TILE_SIZE, TILE_SIZE);
+            imageDrawn = true;
+} 
+            // ⭐ UBAH: Fallback untuk SEMUA chef, bukan hanya Chef1
+            else if (useImages) {
+                // Try base direction image (without item)
                 String baseKey = getChefBaseImageKey(chef, isChef1);
                 if (hasImage(baseKey)) {
                     gc.drawImage(getImage(baseKey), x, y, TILE_SIZE, TILE_SIZE);
                     imageDrawn = true;
                 }
-            } else if (useImages && !isChef1 && hasImage("chef2")) {
+            }
+            // Fallback terakhir: gambar bulatan
+            else if (useImages && !isChef1 && hasImage("chef2")) {
                 gc.drawImage(getImage("chef2"), x, y, TILE_SIZE, TILE_SIZE);
                 imageDrawn = true;
             }
@@ -1185,34 +1215,33 @@ public class GameView {
     }
 
     private String getChefImageKey(ChefPlayer chef, boolean isChef1) {
-        if (!isChef1) {
-            return "chef2";
-        }
-
+        String chefPrefix = isChef1 ? "chef1" : "chef2";
+       
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
             case LEFT -> "left";
             case RIGHT -> "right";
         };
+
 
         // Check if chef is holding an item
         if (chef.hasItem()) {
             Item item = chef.getInventory();
             String itemSuffix = getItemImageSuffix(item);
             if (itemSuffix != null) {
-                return "chef1_" + direction + "_" + itemSuffix;
+                return chefPrefix + "_" + direction + "_" + itemSuffix;
             }
         }
 
-        return "chef1_" + direction;
+
+        return chefPrefix + "_" + direction;
     }
 
-    private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
-        if (!isChef1) {
-            return "chef2";
-        }
 
+    private String getChefBaseImageKey(ChefPlayer chef, boolean isChef1) {
+        String chefPrefix = isChef1 ? "chef1" : "chef2";
+       
         String direction = switch (chef.getDirection()) {
             case UP -> "back";
             case DOWN -> "front";
@@ -1220,8 +1249,10 @@ public class GameView {
             case RIGHT -> "right";
         };
 
-        return "chef1_" + direction;
+
+        return chefPrefix + "_" + direction;
     }
+
 
     private String getItemImageSuffix(Item item) {
         if (item instanceof Plate) {
