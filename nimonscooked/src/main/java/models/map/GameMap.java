@@ -28,6 +28,7 @@ public class GameMap {
 
     private void parseStations() {
         List<Position> ingredientStoragePositions = new ArrayList<>();
+        List<Position> washingStationPositions = new ArrayList<>();
         int stationCount = 0;
 
         for (int y = 0; y < HEIGHT; y++) {
@@ -59,9 +60,8 @@ public class GameMap {
                         stationCount++;
                     }
                     case 'W' -> {
-                        stations.put(pos, new WashingStation(pos));
-                        System.out.println("✓ WASHING station at (" + x + ", " + y + ")");
-                        stationCount++;
+                        washingStationPositions.add(pos); // CHANGED
+                        System.out.println("✓ WASHING station marker at (" + x + ", " + y + ")");
                     }
                     case 'P' -> {
                         stations.put(pos, new PlateStorage(pos, 3));
@@ -87,6 +87,7 @@ public class GameMap {
         }
 
         assignRandomizedIngredients(ingredientStoragePositions);
+        createWashingStations(washingStationPositions);
 
         // Print summary
         System.out.println("===========================================");
@@ -95,6 +96,54 @@ public class GameMap {
         System.out.println("Chef spawn points: " + chefSpawns.size());
         System.out.println("Ingredient storage positions: " + ingredientStoragePositions.size());
         System.out.println("===========================================");
+    }
+
+    private void createWashingStations(List<Position> washPositions) {
+        System.out.println("[DEBUG] Creating washing stations from " + washPositions.size() + " W markers");
+
+        for (int i = 0; i < washPositions.size(); i++) {
+            Position pos1 = washPositions.get(i);
+
+            if (stations.containsKey(pos1)) {
+                System.out.println("[DEBUG] Position " + pos1 + " already has a station, skipping");
+                continue;
+            }
+
+            Position pos2 = null;
+            for (int j = i + 1; j < washPositions.size(); j++) {
+                Position candidate = washPositions.get(j);
+
+                if (pos1.getY() == candidate.getY() &&
+                        Math.abs(pos1.getX() - candidate.getX()) == 1) {
+                    pos2 = candidate;
+                    break;
+                }
+            }
+
+            if (pos2 != null) {
+                Position washPos = pos1.getX() < pos2.getX() ? pos1 : pos2;
+                Position cleanPos = pos1.getX() < pos2.getX() ? pos2 : pos1;
+
+                WashingStation washStation = new WashingStation(washPos, cleanPos);
+
+                stations.put(washPos, washStation);
+                stations.put(cleanPos, washStation);
+
+                System.out.println("✓ WASHING STATION created: Wash(" + washPos.getX() + "," + washPos.getY() +
+                        ") -> Clean(" + cleanPos.getX() + "," + cleanPos.getY() + ")");
+                System.out.println("[DEBUG] Registered at positions: " + washPos + " and " + cleanPos);
+            } else {
+                System.out.println("[WARNING] Could not find pair for washing station at " + pos1);
+            }
+        }
+
+        // Verify after creation
+        System.out.println("[DEBUG] Total stations after washing creation: " + stations.size());
+        for (Map.Entry<Position, Station> entry : stations.entrySet()) {
+            if (entry.getValue() instanceof WashingStation) {
+                System.out.println("[DEBUG] Washing station found at: " + entry.getKey());
+            }
+        }
     }
 
     private void assignRandomizedIngredients(List<Position> positions) {
