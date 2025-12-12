@@ -140,15 +140,15 @@ public class ResultView {
         VBox thresholdsBox = new VBox(5);
         thresholdsBox.setAlignment(Pos.CENTER);
 
-        Label threshold1 = new Label("★ 1 Star: " + level.getOneStarThreshold());
+        Label threshold1 = new Label("1 Star: " + level.getOneStarThreshold());
         threshold1.setFont(Font.font("Arial", 14));
         threshold1.setTextFill(starsEarned >= 1 ? Color.GOLD : Color.LIGHTGRAY);
 
-        Label threshold2 = new Label("★★ 2 Stars: " + level.getTwoStarThreshold());
+        Label threshold2 = new Label("2 Stars: " + level.getTwoStarThreshold());
         threshold2.setFont(Font.font("Arial", 14));
         threshold2.setTextFill(starsEarned >= 2 ? Color.GOLD : Color.LIGHTGRAY);
 
-        Label threshold3 = new Label("★★★ 3 Stars: " + level.getThreeStarThreshold());
+        Label threshold3 = new Label("3 Stars: " + level.getThreeStarThreshold());
         threshold3.setFont(Font.font("Arial", 14));
         threshold3.setTextFill(starsEarned >= 3 ? Color.GOLD : Color.LIGHTGRAY);
 
