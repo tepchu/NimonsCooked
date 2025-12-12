@@ -7,94 +7,81 @@ import models.player.ChefPlayer;
 import models.item.kitchenutensils.Plate;
 import models.core.Position;
 import models.enums.StationType;
+import models.item.Item;
 
 public class PlateStorage extends Station {
 
-    // stack: paling atas posisi terakhir
-    private final Deque<Plate> stack = new ArrayDeque<>();
+    private final Deque<Plate> cleanPlates = new ArrayDeque<>();
+    private final Deque<Plate> dirtyPlates = new ArrayDeque<>();
 
     public PlateStorage(Position position, int initialCleanPlates) {
         super(StationType.PLATE_STORAGE, position);
         for (int i = 0; i < initialCleanPlates; i++) {
-            stack.push(new Plate());
+            cleanPlates.push(new Plate());
         }
     }
 
     @Override
     public void interact(ChefPlayer chef) {
-        // spek: tidak bisa drop item apapun di sini, hanya mekanik stack
-        if (chef.hasItem()) {
-            System.out.println("[PLATE_STORAGE] ✗ Cannot drop items here! This is a plate-only storage.");
-            System.out.println("[PLATE_STORAGE] Dirty plates are returned automatically after serving.");
+        Item chefItem = chef.getInventory();
+
+        // Case 1: Chef holding dirty plate(s) - deposit them
+        if (chefItem instanceof Plate plate && !plate.isClean()) {
+            chef.drop();
+            dirtyPlates.push(plate);
+            System.out.println("[PLATE_STORAGE] Deposited dirty plate. Total dirty: " + dirtyPlates.size());
             return;
         }
 
-        if (!chef.hasItem() && !stack.isEmpty()) {
-            // kalau top adalah clean plate → ambil 1
-            Plate top = stack.peek();
-            if (top.isClean()) {
-                chef.pickUp(stack.pop());
-            } else {
-                // piring kotor di atas → bisa diambil semuanya
-                // (versi simple: ambil satu bundle piring kotor)
-                chef.pickUp(stack.pop());
-            }
+        // Case 2: Chef picks up clean plate
+        if (!chef.hasItem() && !cleanPlates.isEmpty()) {
+            chef.pickUp(cleanPlates.pop());
+            System.out.println("[PLATE_STORAGE] Picked up clean plate. Remaining: " + cleanPlates.size());
+            return;
         }
-        // piring kotor akan dikembalikan ke stack ini oleh kitchen loop setelah serving
+
+        // Case 3: Chef picks up ALL dirty plates at once
+        if (!chef.hasItem() && !dirtyPlates.isEmpty()) {
+            // Create a bundle - just pick the top one (represents all)
+            Plate topDirty = dirtyPlates.pop();
+            chef.pickUp(topDirty);
+            System.out.println("[PLATE_STORAGE] Picked up dirty plate. Remaining dirty: " + dirtyPlates.size());
+            return;
+        }
+
+        System.out.println("[PLATE_STORAGE] No valid interaction");
     }
 
     public void pushDirtyPlate(Plate plate) {
         plate.markDirty();
-        plate.setDish(null); // Ensure no dish attached
-        stack.push(plate);
-        System.out.println("[PLATE_STORAGE] Dirty plate returned to storage. Total plates: " + stack.size());
+        plate.setDish(null);
+        dirtyPlates.push(plate);
+        System.out.println("[PLATE_STORAGE] Dirty plate returned. Total dirty: " + dirtyPlates.size());
     }
 
-    public boolean hasDirtyPlateOnTop() {
-        if (stack.isEmpty()) return false;
-        return !stack.peek().isClean();
+    public void pushCleanPlate(Plate plate) {
+        plate.setClean(true);
+        cleanPlates.push(plate);
+        System.out.println("[PLATE_STORAGE] Clean plate added. Total clean: " + cleanPlates.size());
     }
 
     public int getCleanPlateCount() {
-        int count = 0;
-        boolean foundDirty = false;
-
-        for (Plate plate : stack) {
-            if (!plate.isClean()) {
-                foundDirty = true;
-            } else if (!foundDirty) {
-                count++;
-            }
-        }
-
-        return count;
+        return cleanPlates.size();
     }
 
     public int getDirtyPlateCount() {
-        int count = 0;
-
-        for (Plate plate : stack) {
-            if (!plate.isClean()) {
-                count++;
-            } else {
-                break; // Clean plates are below
-            }
-        }
-
-        return count;
+        return dirtyPlates.size();
     }
 
     public int getTotalPlateCount() {
-        return stack.size();
-    }
-
-    public boolean isEmpty() {
-        return stack.isEmpty();
+        return cleanPlates.size() + dirtyPlates.size();
     }
 
     public boolean hasCleanPlates() {
-        if (stack.isEmpty()) return false;
-        // Clean plates available only if top is clean OR if we count them
-        return getCleanPlateCount() > 0;
+        return !cleanPlates.isEmpty();
+    }
+
+    public boolean hasDirtyPlates() {
+        return !dirtyPlates.isEmpty();
     }
 }
