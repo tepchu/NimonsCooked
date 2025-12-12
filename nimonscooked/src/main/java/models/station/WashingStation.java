@@ -22,6 +22,8 @@ public class WashingStation extends Station {
     private int savedProgress; // Progress in milliseconds
     private long lastWashTime;
 
+    private ChefPlayer chefWashing;
+
     public WashingStation(Position washPos, Position cleanPos) {
         super(StationType.WASHING, washPos); // Main position is wash position
         this.washPosition = washPos;
@@ -57,9 +59,9 @@ public class WashingStation extends Station {
     private void handleWashSideInteraction(ChefPlayer chef, Item chefItem) {
         // Case 1: Chef places dirty plate to wash
         if (chefItem instanceof Plate plate && !plate.isClean() && dirtyPlateBeingWashed == null) {
-            chef.drop();
+            chef.drop(); // DROP - plate stays on station
             dirtyPlateBeingWashed = plate;
-            dirtyPlateBeingWashed.setDish(null); // Remove any dish
+            dirtyPlateBeingWashed.setDish(null);
             savedProgress = 0;
             System.out.println("[WASHING] Dirty plate placed for washing");
             return;
@@ -84,7 +86,6 @@ public class WashingStation extends Station {
         if (!chef.hasItem() && dirtyPlateBeingWashed != null && !chef.isBusy()) {
             chef.pickUp(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
-            savedProgress = 0;
             System.out.println("[WASHING] Picked up unfinished dirty plate");
             return;
         }
@@ -108,6 +109,7 @@ public class WashingStation extends Station {
      * Start washing new plate
      */
     private void startWashing(ChefPlayer chef) {
+        chefWashing = chef;
         savedProgress = 0;
         lastWashTime = System.currentTimeMillis();
 
@@ -117,6 +119,7 @@ public class WashingStation extends Station {
             dirtyPlateBeingWashed.setClean(true);
             cleanPlatesStack.push(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
+            chefWashing = null;
             savedProgress = 0;
             System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
         });
@@ -135,6 +138,7 @@ public class WashingStation extends Station {
             dirtyPlateBeingWashed.setClean(true);
             cleanPlatesStack.push(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
+            chefWashing = null;
             savedProgress = 0;
             System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
         });
@@ -162,6 +166,7 @@ public class WashingStation extends Station {
         } else if (!chef.isBusy() && savedProgress > 0) {
             // Chef stopped washing - progress is already saved
             System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s / " + WASH_DURATION_SEC + "s");
+            chefWashing = null;
         }
     }
 
