@@ -36,7 +36,12 @@ public class IngredientStorage extends Station {
         if (chefItem instanceof Plate plate && plate.isClean() && plateOnStation == null) {
             chef.drop();
             plateOnStation = plate;
-            System.out.println("[INGREDIENT_STORAGE] ✓ Plate placed on station");
+            System.out.println("[STATION] Plate placed on station");
+
+            // If there are ingredients already on station, add them to plate
+            if (!ingredientsOnStation.isEmpty()) {
+                assembleAllIngredients();
+            }
             return;
         }
 

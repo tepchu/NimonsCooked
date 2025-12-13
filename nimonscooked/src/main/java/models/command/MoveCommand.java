@@ -4,6 +4,7 @@ import models.player.ChefPlayer;
 import models.core.Direction;
 import models.core.Position;
 import models.map.GameMap;
+import models.player.CurrentAction;
 
 import java.util.List;
 
@@ -84,6 +85,14 @@ public class MoveCommand implements ChefCommand {
         }
 
         if (canMoveTo(newX, newY)) {
+            // NEW: If chef is busy (cutting/washing), interrupt and save progress
+            if (chef.isBusy()) {
+                CurrentAction action = chef.getCurrentAction();
+                if (action == CurrentAction.CUTTING || action == CurrentAction.WASHING) {
+                    System.out.println("[MOVE] Chef walking away from " + action + " - saving progress");
+                    chef.interruptBusy();
+                }
+            }
             // Change to smooth movement
             chef.startMove(newX, newY, false);
             positionChanged = true;

@@ -30,12 +30,15 @@ public class AssemblyStation extends Station {
             chef.drop();
             plateOnStation = plate;
             System.out.println("[ASSEMBLY] Plate placed on station");
+            if (!ingredientsOnStation.isEmpty()) {
+                assembleAllIngredients();
+            }
             return;
         }
 
         // Case 2: Chef places a chopped and raw ingredient on station (can stack multiple)
-        if (chefItem instanceof Ingredient ing && 
-            (ing.getState() == IngredientState.CHOPPED || ing.getState() == IngredientState.RAW)) {
+        if (chefItem instanceof Ingredient ing &&
+                (ing.getState() == IngredientState.CHOPPED || ing.getState() == IngredientState.RAW)) {
             chef.drop();
             ingredientsOnStation.add(ing);
             System.out.println("[ASSEMBLY] Added " + ing.getName() + " to station.  Total ingredients: " + ingredientsOnStation.size());
@@ -62,32 +65,37 @@ public class AssemblyStation extends Station {
             return;
         }
 
-        // Case 4: Both plate and ingredients on station, chef is empty - assemble and pick up
-        if (plateOnStation != null && !ingredientsOnStation.isEmpty() && !chef.hasItem()) {
-            assembleAllIngredients();
-            chef.pickUp(plateOnStation);
-            plateOnStation = null;
-            System.out.println("[ASSEMBLY] Assembled dish picked up");
+        // Case 4: Both plate and ingredients on station - pick up assembled plate
+        if (plateOnStation != null && !chef.hasItem()) {
+            // Check if plate has dish (already assembled)
+            if (plateOnStation.hasDish()) {
+                chef.pickUp(plateOnStation);
+                plateOnStation = null;
+                System.out.println("[ASSEMBLY] Picked up assembled dish");
+            } else if (ingredientsOnStation.isEmpty()) {
+                // Empty plate, no ingredients
+                chef.pickUp(plateOnStation);
+                plateOnStation = null;
+                System.out.println("[ASSEMBLY] Picked up empty plate");
+            } else {
+                // Plate without dish but ingredients on station - assemble first
+                assembleAllIngredients();
+                chef.pickUp(plateOnStation);
+                plateOnStation = null;
+                System.out.println("[ASSEMBLY] Assembled and picked up dish");
+            }
             return;
         }
 
         // Case 5: Only plate on station, no ingredients, chef is empty - pick up plate
-        if (!chef.hasItem() && plateOnStation != null && ingredientsOnStation.isEmpty()) {
-            chef.pickUp(plateOnStation);
-            plateOnStation = null;
+        if (!chef.hasItem() && !ingredientsOnStation.isEmpty() && (plateOnStation == null)) {
+            Ingredient ing = ingredientsOnStation.remove(0);
+            chef.pickUp((Item) ing);
             System.out.println("[ASSEMBLY] Plate picked up from station");
             return;
         }
 
-        // Case 6: Only ingredients on station, no plate, chef is empty - pick up first ingredient
-        if (!chef.hasItem() && !ingredientsOnStation.isEmpty() && plateOnStation == null) {
-            Ingredient ing = ingredientsOnStation.remove(0);
-            chef.pickUp((Item) ing);
-            System.out.println("[ASSEMBLY] Picked up " + ing.getName() + " from station");
-            return;
-        }
-
-        // Case 7: Chef has plate that already has a dish, add ingredients to it
+        // Case 6: Chef has plate that already has a dish, add ingredients to it
         if (chefItem instanceof Plate plate && plate.hasDish() && !ingredientsOnStation.isEmpty()) {
             for (Ingredient ing : ingredientsOnStation) {
                 if (plate.getDish() instanceof PizzaDish pizza) {

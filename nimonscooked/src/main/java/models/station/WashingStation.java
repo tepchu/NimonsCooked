@@ -21,6 +21,7 @@ public class WashingStation extends Station {
 
     private int savedProgress; // Progress in milliseconds
     private long lastWashTime;
+    private boolean isWashing;
 
     public WashingStation(Position washPos, Position cleanPos) {
         super(StationType.WASHING, washPos); // Main position is wash position
@@ -29,6 +30,7 @@ public class WashingStation extends Station {
         this.cleanPlatesStack = new Stack<>();
         this.savedProgress = 0;
         this.lastWashTime = 0;
+        this.isWashing = false;
     }
 
     // Keep old constructor for backwards compatibility
@@ -81,7 +83,7 @@ public class WashingStation extends Station {
         }
 
         // Case 3: Chef picks up unfinished dirty plate
-        if (!chef.hasItem() && dirtyPlateBeingWashed != null && !chef.isBusy()) {
+        if (!chef.hasItem() && dirtyPlateBeingWashed != null && !isWashing) {
             chef.pickUp(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
             savedProgress = 0;
@@ -108,6 +110,7 @@ public class WashingStation extends Station {
      * Start washing new plate
      */
     private void startWashing(ChefPlayer chef) {
+        isWashing = true;
         savedProgress = 0;
         lastWashTime = System.currentTimeMillis();
 
@@ -118,6 +121,7 @@ public class WashingStation extends Station {
             cleanPlatesStack.push(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
             savedProgress = 0;
+            isWashing = false;
             System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
         });
     }
@@ -126,6 +130,7 @@ public class WashingStation extends Station {
      * Continue washing with saved progress
      */
     private void continueWashing(ChefPlayer chef) {
+        isWashing = true;
         int remainingTime = WASH_DURATION_SEC - (savedProgress / 1000);
         lastWashTime = System.currentTimeMillis();
 
@@ -136,6 +141,7 @@ public class WashingStation extends Station {
             cleanPlatesStack.push(dirtyPlateBeingWashed);
             dirtyPlateBeingWashed = null;
             savedProgress = 0;
+            isWashing = false;
             System.out.println("[WASHING] ✓ Plate cleaned and moved to clean side!");
         });
     }
@@ -151,17 +157,18 @@ public class WashingStation extends Station {
      * This is called by Stage.update()
      */
     public void saveProgress(ChefPlayer chef) {
-        if (dirtyPlateBeingWashed == null) return;
+        if (!isWashing || dirtyPlateBeingWashed == null) return;
 
-        if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.WASHING) {
-            // Chef is actively washing - update elapsed time
-            long elapsed = System.currentTimeMillis() - lastWashTime;
-            savedProgress += (int) elapsed;
-            savedProgress = Math.min(savedProgress, WASH_DURATION_SEC * 1000);
-            lastWashTime = System.currentTimeMillis();
-        } else if (!chef.isBusy() && savedProgress > 0) {
-            // Chef stopped washing - progress is already saved
-            System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s / " + WASH_DURATION_SEC + "s");
+        // Update elapsed time
+        long elapsed = System.currentTimeMillis() - lastWashTime;
+        savedProgress += (int) elapsed;
+        savedProgress = Math.min(savedProgress, WASH_DURATION_SEC * 1000);
+        lastWashTime = System.currentTimeMillis();
+
+        // If chef walked away, clear washing flag
+        if (!chef.isBusy() || chef.getCurrentAction() != CurrentAction.WASHING) {
+            isWashing = false;
+            System.out.println("[WASHING] Progress saved: " + (savedProgress / 1000) + "s");
         }
     }
 

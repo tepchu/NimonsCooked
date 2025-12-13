@@ -20,7 +20,7 @@ public class CuttingStation extends Station {
     private Ingredient ingredientBeingCut;
     private int savedProgress; // Progress in milliseconds
     private long lastCutTime;
-
+    private boolean isCutting;
     private Plate plateOnStation;
     private List<Ingredient> ingredientsOnStation;
 
@@ -29,6 +29,7 @@ public class CuttingStation extends Station {
         this.ingredientBeingCut = null;
         this.savedProgress = 0;
         this.lastCutTime = 0;
+        this.isCutting = false;
         this.plateOnStation = null;
         this.ingredientsOnStation = new ArrayList<>();
     }
@@ -42,7 +43,12 @@ public class CuttingStation extends Station {
         if (chefItem instanceof Plate plate && plate.isClean() && plateOnStation == null) {
             chef.drop();
             plateOnStation = plate;
-            System.out.println("[CUTTING] Plate placed on station");
+            System.out.println("[STATION] Plate placed on station");
+
+            // If there are ingredients already on station, add them to plate
+            if (!ingredientsOnStation.isEmpty()) {
+                assembleAllIngredients();
+            }
             return;
         }
 
@@ -77,20 +83,35 @@ public class CuttingStation extends Station {
 
         // ========== CUTTING FUNCTIONS ==========
 
-        // Case 5: Start or continue cutting
-        // Case 5: Start or continue cutting
-        if (chefItem instanceof Ingredient ing && ing.canBeChopped()) {
-            // Check if continuing same ingredient
+        // Case 5: Chef places RAW ingredient to start/continue cutting
+        if (chefItem instanceof Ingredient ing && ing.canBeChopped() && ing.getState() == IngredientState.RAW) {
             if (ingredientBeingCut == ing && savedProgress > 0) {
+                // Continue cutting same ingredient
                 continueCutting(chef, ing);
-            } else {
+            } else if (ingredientBeingCut == null) {
+                // Start new cutting - DROP ingredient on station
+                chef.drop();
+                ingredientBeingCut = ing;
                 startCutting(chef, ing);
+            } else {
+                System.out.println("[CUTTING] Another ingredient is being cut");
             }
             return;
         }
 
-        // Case 6: Pick up previously placed ingredient for cutting
-        if (!chef.hasItem() && ingredientBeingCut != null) {
+
+        // Case 6: Empty-handed chef resumes cutting ingredient on station
+        if (!chef.hasItem() && ingredientBeingCut != null && !chef.isBusy()) {
+            if (savedProgress > 0) {
+                continueCutting(chef, ingredientBeingCut);
+            } else {
+                startCutting(chef, ingredientBeingCut);
+            }
+            return;
+        }
+
+        // Case 7: Pick up unfinished ingredient (cancel cutting)
+        if (!chef.hasItem() && ingredientBeingCut != null && !isCutting) {
             chef.pickUp(ingredientBeingCut);
             ingredientBeingCut = null;
             savedProgress = 0;
@@ -105,33 +126,39 @@ public class CuttingStation extends Station {
      * Start cutting new ingredient
      */
     private void startCutting(ChefPlayer chef, Ingredient ing) {
-        ingredientBeingCut = ing;
+        isCutting = true; // SET FLAG
         savedProgress = 0;
         lastCutTime = System.currentTimeMillis();
 
-        System.out.println("[CUTTING] Starting new cut: " + CUT_DURATION_SEC + "s");
+        System.out.println("[CUTTING] Starting cut: " + CUT_DURATION_SEC + "s (ingredient on station)");
 
         chef.startBusy(CurrentAction.CUTTING, CUT_DURATION_SEC, () -> {
             ing.chop();
+            ingredientsOnStation.add(ing); // Move to finished stack
             ingredientBeingCut = null;
             savedProgress = 0;
+            isCutting = false; // CLEAR FLAG
             System.out.println("[CUTTING] ✓ Cutting complete!");
         });
     }
+
 
     /**
      * Continue cutting with saved progress
      */
     private void continueCutting(ChefPlayer chef, Ingredient ing) {
+        isCutting = true; // SET FLAG
         int remainingTime = CUT_DURATION_SEC - (savedProgress / 1000);
         lastCutTime = System.currentTimeMillis();
 
-        System.out.println("[CUTTING] Continuing cut: " + remainingTime + "s remaining (saved: " + savedProgress / 1000 + "s)");
+        System.out.println("[CUTTING] Continuing cut: " + remainingTime + "s remaining");
 
         chef.startBusy(CurrentAction.CUTTING, remainingTime, () -> {
             ing.chop();
+            ingredientsOnStation.add(ing);
             ingredientBeingCut = null;
             savedProgress = 0;
+            isCutting = false; // CLEAR FLAG
             System.out.println("[CUTTING] ✓ Cutting complete!");
         });
     }
@@ -141,18 +168,18 @@ public class CuttingStation extends Station {
      * This is called by Stage.update()
      */
     public void saveProgress(ChefPlayer chef) {
-        if (ingredientBeingCut == null) return;
-        if (chef.getInventory() != ingredientBeingCut) return;
+        if (!isCutting || ingredientBeingCut == null) return;
 
-        if (chef.isBusy() && chef.getCurrentAction() == CurrentAction.CUTTING) {
-            // Chef is actively cutting - update elapsed time
-            long elapsed = System.currentTimeMillis() - lastCutTime;
-            savedProgress += (int) elapsed;
-            savedProgress = Math.min(savedProgress, CUT_DURATION_SEC * 1000);
-            lastCutTime = System.currentTimeMillis();
-        } else if (!chef.isBusy() && savedProgress > 0) {
-            // Chef stopped cutting - progress is already saved
-            System.out.println("[CUTTING] Progress saved: " + (savedProgress / 1000) + "s / " + CUT_DURATION_SEC + "s");
+        // Update elapsed time
+        long elapsed = System.currentTimeMillis() - lastCutTime;
+        savedProgress += (int) elapsed;
+        savedProgress = Math.min(savedProgress, CUT_DURATION_SEC * 1000);
+        lastCutTime = System.currentTimeMillis();
+
+        // If chef walked away (not busy anymore), clear cutting flag
+        if (!chef.isBusy() || chef.getCurrentAction() != CurrentAction.CUTTING) {
+            isCutting = false;
+            System.out.println("[CUTTING] Progress saved: " + (savedProgress / 1000) + "s");
         }
     }
 

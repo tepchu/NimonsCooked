@@ -706,11 +706,31 @@ public class GameView {
         // Draw plate first if exists
         if (storage.hasPlate()) {
             Plate plate = storage.getPlateOnStation();
+
             if (imageManager.isUsingImages() && imageManager.hasImage("plate_empty")) {
                 gc.drawImage(imageManager.getImage("plate_empty"), centerX - 20, centerY - 20, 40, 40);
             } else {
                 gc.setFill(Color.WHITE);
                 gc.fillOval(centerX - 20, centerY - 20, 40, 40);
+            }
+
+            // Check if plate has dish with ingredients (moved inside the hasPlate block)
+            if (plate.hasDish()) {
+                Dish dish = plate.getDish();
+                List<Preparable> dishComponents = dish.getComponents();
+
+                if (!dishComponents.isEmpty()) {
+                    List<Ingredient> ingredientsToRender = new ArrayList<>();
+                    for (Preparable p : dishComponents) {
+                        if (p instanceof Ingredient ing) {
+                            ingredientsToRender.add(ing);
+                        }
+                    }
+
+                    if (!ingredientsToRender.isEmpty()) {
+                        drawStackedIngredients(centerX, centerY, ingredientsToRender);
+                    }
+                }
             }
         }
 
@@ -743,12 +763,33 @@ public class GameView {
                 gc.fillOval(centerX - 20, centerY - 20, 40, 40);
             }
 
-            // If plate has finished pizza, draw pizza image
-            if (plate.hasDish() && plate.getDish() instanceof PizzaDish pizza) {
-                if (pizza.isBaked()) {
+            // Check if plate has a dish with ingredients
+            if (plate.hasDish()) {
+                Dish dish = plate.getDish();
+
+                // If it's a finished baked pizza, show pizza image
+                if (dish instanceof PizzaDish pizza && pizza.isBaked()) {
                     drawFinishedPizza(centerX, centerY, pizza);
                     drawStationLabelOnly(x, y, "PIZZA", Color.ORANGE);
-                    return; // Pizza sudah jadi, tidak perlu draw ingredients
+                    return;
+                }
+
+                // Otherwise, show stacked ingredients from the dish
+                List<Preparable> dishComponents = dish.getComponents();
+                if (!dishComponents.isEmpty()) {
+                    // Convert Preparable to Ingredient for rendering
+                    List<Ingredient> ingredientsToRender = new ArrayList<>();
+                    for (Preparable p : dishComponents) {
+                        if (p instanceof Ingredient ing) {
+                            ingredientsToRender.add(ing);
+                        }
+                    }
+
+                    if (!ingredientsToRender.isEmpty()) {
+                        drawStackedIngredients(centerX, centerY, ingredientsToRender);
+                        drawStationLabelOnly(x, y, "P+" + ingredientsToRender.size(), Color.LIGHTGREEN);
+                        return;
+                    }
                 }
             }
         }
@@ -766,7 +807,12 @@ public class GameView {
         if (assembly.hasPlate() && assembly.hasIngredient()) {
             label = "P+" + ingredients.size();
         } else if (assembly.hasPlate()) {
-            label = "PLATE";
+            Plate plate = assembly.getPlateOnStation();
+            if (plate.hasDish() && !plate.getDish().getComponents().isEmpty()) {
+                label = "DISH";
+            } else {
+                label = "PLATE";
+            }
         } else if (assembly.hasIngredient()) {
             label = "ING:" + ingredients.size();
         }
@@ -788,8 +834,50 @@ public class GameView {
                 gc.setFill(Color.WHITE);
                 gc.fillOval(centerX - 20, centerY - 20, 40, 40);
             }
+
+            // Check if plate has dish with ingredients
+            if (plate.hasDish()) {
+                Dish dish = plate.getDish();
+                List<Preparable> dishComponents = dish.getComponents();
+
+                if (!dishComponents.isEmpty()) {
+                    List<Ingredient> ingredientsToRender = new ArrayList<>();
+                    for (Preparable p : dishComponents) {
+                        if (p instanceof Ingredient ing) {
+                            ingredientsToRender.add(ing);
+                        }
+                    }
+
+                    if (!ingredientsToRender.isEmpty()) {
+                        drawStackedIngredients(centerX, centerY, ingredientsToRender);
+                    }
+                }
+            }
         }
 
+        // Draw ingredient being cut (separate, always visible)
+        Ingredient beingCut = cutting.getIngredientBeingCut();
+        if (beingCut != null) {
+            String imageKey = getIngredientImageKey(beingCut);
+
+            int cutX = centerX - 15;
+            int cutY = centerY - 18;
+
+            if (imageManager.isUsingImages() && imageManager.hasImage(imageKey)) {
+                gc.drawImage(imageManager.getImage(imageKey), cutX, cutY, 30, 30);
+            } else {
+                Color ingColor = getIngredientColor(beingCut);
+                gc.setFill(ingColor);
+                gc.fillOval(cutX, cutY, 30, 30);
+            }
+
+            // Draw progress bar if being cut
+            double progress = cutting.getCutProgressPercent();
+            if (progress > 0) {
+                drawProgressBar(cutX, cutY + 32, 30, progress);
+
+            }
+        }
         // Draw stacked ingredients
         List<Ingredient> ingredients = cutting.getIngredientsOnStation();
         if (!ingredients.isEmpty()) {

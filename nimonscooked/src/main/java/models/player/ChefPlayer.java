@@ -109,7 +109,7 @@ public class ChefPlayer {
 
     // ===================== MOVEMENT =====================
     public void move(Direction dir) {
-        if (busy || isMoving) return;
+        if (isMoving) return;
 
         this.direction = dir;
         int newX = position.getX();

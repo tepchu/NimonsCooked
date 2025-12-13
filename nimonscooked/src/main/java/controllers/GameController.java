@@ -7,6 +7,7 @@ import models.map.*;
 import models.player.ChefPlayer;
 import models.core.Position;
 import models.core.Direction;
+import models.player.CurrentAction;
 import models.station.Station;
 import javafx.scene.input.KeyCode;
 import models.command.*;
@@ -132,6 +133,19 @@ public class GameController {
             }
 
             if (!blocked) {
+                // If chef is busy (cutting/washing), interrupt and save progress
+                if (chef.isBusy()) {
+                    CurrentAction action = chef.getCurrentAction();
+                    if (action == CurrentAction.CUTTING || action == CurrentAction.WASHING) {
+                        System.out.println("[MOVE] Chef walking away from " + action + " - saving progress");
+
+                        // Interrupt the busy thread
+                        chef.interruptBusy();
+
+                        // Progress will be saved by Stage.updateStationProgress()
+                    }
+                }
+
                 chef.move(dir);
             }
         }
