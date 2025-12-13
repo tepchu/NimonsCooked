@@ -7,14 +7,11 @@ import models.map.*;
 import models.player.ChefPlayer;
 import models.core.Position;
 import models.core.Direction;
-import models.player.CurrentAction;
-import models.station.Station;
 import javafx.scene.input.KeyCode;
 import models.command.*;
 
 import models.item.Item;
 import models.item.Ingredient;
-import models.enums.IngredientState;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,13 +44,6 @@ public class GameController {
         stage.startGame();
     }
 
-    public void startDefaultGame() {
-        GameMap map = MapLoader.loadPizzaMap();
-        stage = new Stage("type_d_pizza", MapType.PIZZA, map);
-        stage.initStage();
-        stage.startGame();
-    }
-
     public void startGame() {
         if (stage != null) {
             stage.startGame();
@@ -76,7 +66,7 @@ public class GameController {
         }
 
         ChefPlayer chef = stage.getActiveChef();
-        if (chef == null || chef.isBusy()) return;
+        if (chef == null) return;
 
         GameMap map = stage.getGameMap();
         List<ChefPlayer> chefs = stage.getChefs();
@@ -88,9 +78,21 @@ public class GameController {
             case S -> command = new MoveCommand(chef, Direction.DOWN, map, chefs);
             case A -> command = new MoveCommand(chef, Direction.LEFT, map, chefs);
             case D -> command = new MoveCommand(chef, Direction.RIGHT, map, chefs);
-            case C -> command = new PickupDropCommand(chef, map, itemsOnFloor);
-            case X -> command = new InteractCommand(chef, map, itemsOnFloor);
-            case SPACE -> command = new ThrowCommand(chef, map, chefs, itemsOnFloor);
+            case C -> {
+                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                    command = new PickupDropCommand(chef, map, itemsOnFloor);
+                }
+            }
+            case X -> {
+                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                    command = new InteractCommand(chef, map, itemsOnFloor);
+                }
+            }
+            case SPACE -> {
+                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                    command = new ThrowCommand(chef, map, chefs, itemsOnFloor);
+                }
+            }
             case Z -> {
                 commandInvoker.undo();
                 return;
@@ -103,81 +105,6 @@ public class GameController {
 
         if (command != null) {
             commandInvoker.executeCommand(command);
-        }
-    }
-
-    private void attemptMove(ChefPlayer chef, Direction dir, GameMap map) {
-        Position currentPos = chef.getPosition();
-        int newX = currentPos.getX();
-        int newY = currentPos.getY();
-
-        switch (dir) {
-            case UP -> newY--;
-            case DOWN -> newY++;
-            case LEFT -> newX--;
-            case RIGHT -> newX++;
-        }
-
-        chef.setDirection(dir);
-
-        if (map.isWalkable(newX, newY)) {
-            boolean blocked = false;
-            for (ChefPlayer other : stage.getChefs()) {
-                if (other != chef) {
-                    Position otherPos = other.getPosition();
-                    if (otherPos.getX() == newX && otherPos.getY() == newY) {
-                        blocked = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!blocked) {
-                // If chef is busy (cutting/washing), interrupt and save progress
-                if (chef.isBusy()) {
-                    CurrentAction action = chef.getCurrentAction();
-                    if (action == CurrentAction.CUTTING || action == CurrentAction.WASHING) {
-                        System.out.println("[MOVE] Chef walking away from " + action + " - saving progress");
-
-                        // Interrupt the busy thread
-                        chef.interruptBusy();
-
-                        // Progress will be saved by Stage.updateStationProgress()
-                    }
-                }
-
-                chef.move(dir);
-            }
-        }
-    }
-
-    private void handleInteract(ChefPlayer chef, GameMap map) {
-        Position chefPos = chef.getPosition();
-        Direction dir = chef.getDirection();
-
-        if (!chef.hasItem() && itemsOnFloor.containsKey(chefPos)) {
-            Item item = itemsOnFloor.remove(chefPos);
-            chef.pickUp(item);
-            System.out.println("Picked up " + item.getName() + " from current position");
-            return;
-        }
-
-        int frontX = chefPos.getX();
-        int frontY = chefPos.getY();
-
-        switch (dir) {
-            case UP -> frontY--;
-            case DOWN -> frontY++;
-            case LEFT -> frontX--;
-            case RIGHT -> frontX++;
-        }
-
-        Station station = map.getStationAt(frontX, frontY);
-
-        if (station != null) {
-            station.interact(chef);
-        } else {
-            handleFloorInteraction(chef, frontX, frontY);
         }
     }
 

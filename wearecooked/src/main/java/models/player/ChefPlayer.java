@@ -1,6 +1,5 @@
 package models.player;
 
-
 import models.core.Direction;
 import models.core.Position;
 import models.item.Item;
@@ -14,24 +13,25 @@ public class ChefPlayer {
     private Position position;
     private Direction direction;
 
-    private Item inventory;          // bisa null
+    private Item inventory;
     private CurrentAction currentAction;
 
-    private double visualX;  // For smooth animation
-    private double visualY;  // For smooth animation
+    private double visualX;
+    private double visualY;
     private boolean isMoving;
     private int targetX;
     private int targetY;
-    private static final double MOVE_SPEED = 0.15; // Tiles per frame (adjust for speed)
-    private static final double DASH_SPEED = 0.5;  // Faster for dash
+    private static final double MOVE_SPEED = 0.15;
+    private static final double DASH_SPEED = 0.5;
     private boolean isDashing;
 
     private boolean busy;
     private Thread busyThread;
+    private boolean interrupted; // Track if action was interrupted
 
     private long lastDashTime = 0;
-    private static final long DASH_COOLDOWN_MS = 3000; // 3 second cooldown
-    private static final int DASH_DISTANCE = 3; // Move 3 tiles at once
+    private static final long DASH_COOLDOWN_MS = 3000;
+    private static final int DASH_DISTANCE = 3;
 
     private long busyStartTime = 0;
     private int busyDurationSec = 0;
@@ -47,13 +47,11 @@ public class ChefPlayer {
         this.direction = Direction.DOWN;
         this.currentAction = CurrentAction.IDLE;
         this.busy = false;
+        this.interrupted = false;
     }
 
     // ===================== SMOOTH MOVEMENT =====================
 
-    /**
-     * Start moving towards a target position
-     */
     public void startMove(int newX, int newY, boolean dash) {
         if (isMoving || isBusy()) return;
 
@@ -64,10 +62,6 @@ public class ChefPlayer {
         this.currentAction = CurrentAction.MOVING;
     }
 
-    /**
-     * Update visual position for smooth animation
-     * Call this every frame from GameView
-     */
     public void updateMovement() {
         if (!isMoving) return;
 
@@ -77,7 +71,6 @@ public class ChefPlayer {
         double distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < 0.05) {
-            // Reached target
             visualX = targetX;
             visualY = targetY;
             position.setX(targetX);
@@ -86,16 +79,12 @@ public class ChefPlayer {
             isDashing = false;
             currentAction = CurrentAction.IDLE;
         } else {
-            // Move towards target
             double moveDistance = Math.min(speed, distance);
             visualX += (dx / distance) * moveDistance;
             visualY += (dy / distance) * moveDistance;
         }
     }
 
-    /**
-     * Instantly teleport (for undo, etc.)
-     */
     public void teleportTo(int x, int y) {
         this.position.setX(x);
         this.position.setY(y);
@@ -159,6 +148,7 @@ public class ChefPlayer {
         if (busy) return;
 
         busy = true;
+        interrupted = false; // Reset interrupted flag
         currentAction = action;
 
         busyStartTime = System.currentTimeMillis();
@@ -167,13 +157,20 @@ public class ChefPlayer {
         busyThread = new Thread(() -> {
             try {
                 Thread.sleep(durationSec * 1000L);
-            } catch (InterruptedException ignored) {
-                // TODO: untuk simpan progress di station
-            } finally {
-                busy = false;
-                currentAction = CurrentAction.IDLE;
-                if (onFinish != null) {
+
+                // Only run callback if NOT interrupted
+                if (!interrupted && onFinish != null) {
                     onFinish.run();
+                }
+            } catch (InterruptedException e) {
+                // Thread was interrupted - DON'T run callback
+                interrupted = true;
+            } finally {
+                // Only clear state if not interrupted
+                // If interrupted, state should be preserved for progress saving
+                if (!interrupted) {
+                    busy = false;
+                    currentAction = CurrentAction.IDLE;
                 }
             }
         });
@@ -209,15 +206,17 @@ public class ChefPlayer {
     public int interruptBusy() {
         if (!busy || busyThread == null) return 0;
 
+        interrupted = true; // Set flag BEFORE interrupting
         busyThread.interrupt();
-        busy = false;
 
         long elapsed = System.currentTimeMillis() - busyStartTime;
         int elapsedSec = (int) (elapsed / 1000);
 
+        // Clear busy state after calculating elapsed time
+        busy = false;
         currentAction = CurrentAction.IDLE;
 
-        System.out.println("[CHEF] Interrupted " + currentAction + " - elapsed: " + elapsedSec + "s");
+        System.out.println("[CHEF] Interrupted - elapsed: " + elapsedSec + "s");
         return elapsedSec;
     }
 

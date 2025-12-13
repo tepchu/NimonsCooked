@@ -35,7 +35,10 @@ public class MoveCommand implements ChefCommand {
 
     @Override
     public boolean canExecute() {
-        return !chef.isBusy();
+        if (chef.isMoving()) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -85,7 +88,7 @@ public class MoveCommand implements ChefCommand {
         }
 
         if (canMoveTo(newX, newY)) {
-            // NEW: If chef is busy (cutting/washing), interrupt and save progress
+            // If chef is busy (cutting/washing), interrupt and save progress
             if (chef.isBusy()) {
                 CurrentAction action = chef.getCurrentAction();
                 if (action == CurrentAction.CUTTING || action == CurrentAction.WASHING) {
@@ -93,7 +96,6 @@ public class MoveCommand implements ChefCommand {
                     chef.interruptBusy();
                 }
             }
-            // Change to smooth movement
             chef.startMove(newX, newY, false);
             positionChanged = true;
         } else {
@@ -110,7 +112,6 @@ public class MoveCommand implements ChefCommand {
             return;
         }
 
-        // Instant teleport for undo
         chef.teleportTo(previousPosition.getX(), previousPosition.getY());
         chef.setDirection(previousDirection);
 
