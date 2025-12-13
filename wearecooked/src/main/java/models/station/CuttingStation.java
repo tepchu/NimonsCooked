@@ -18,7 +18,7 @@ public class CuttingStation extends Station {
     public static final int CUT_DURATION_SEC = 3;
 
     private Ingredient ingredientBeingCut;
-    private int savedProgress; // Progress in milliseconds
+    private int savedProgress;
     private long lastCutTime;
     private boolean isCutting;
     private Plate plateOnStation;
@@ -43,7 +43,7 @@ public class CuttingStation extends Station {
         if (chefItem instanceof Plate plate && plate.isClean() && plateOnStation == null) {
             chef.drop();
             plateOnStation = plate;
-            System.out.println("[STATION] Plate placed on station");
+            System.out.println("[CUTTING] Plate placed on station");
 
             // If there are ingredients already on station, add them to plate
             if (!ingredientsOnStation.isEmpty()) {
@@ -52,21 +52,63 @@ public class CuttingStation extends Station {
             return;
         }
 
-        // Case 2: Chef places a chopped ingredient on station (can stack multiple)
-        if (chefItem instanceof Ingredient ing && ing.getState() == IngredientState.CHOPPED) {
-            chef.drop();
-            ingredientsOnStation.add(ing);
-            System.out.println("[CUTTING] Added " + ing.getName() + " to station. Total ingredients: " + ingredientsOnStation.size());
+        // Case 2: Chef places ingredient on station (RAW goes to cutting, CHOPPED stacks)
+        if (chefItem instanceof Ingredient ing) {
+            // If it's CHOPPED, add to stack
+            if (ing.getState() == IngredientState.CHOPPED) {
+                // Check if this would mix with different state on plate
+                if (plateOnStation != null && plateOnStation.hasDish()) {
+                    IngredientState plateState = getDishIngredientState(plateOnStation.getDish());
+                    if (plateState != null && plateState == IngredientState.RAW) {
+                        System.out.println("[CUTTING] ✗ Cannot mix RAW and CHOPPED ingredients!");
+                        return;
+                    }
+                }
 
-            // Auto-assemble if plate is present
-            if (plateOnStation != null) {
-                assembleAllIngredients();
+                chef.drop();
+                ingredientsOnStation.add(ing);
+                System.out.println("[CUTTING] Added " + ing.getName() + " to station. Total ingredients: " + ingredientsOnStation.size());
+
+                // Auto-assemble if plate is present
+                if (plateOnStation != null) {
+                    assembleAllIngredients();
+                }
+                return;
             }
-            return;
+        }
+
+        // NEW: Case 2.5: Chef picks up ONLY RAW ingredients from plate
+        if (!chef.hasItem() && plateOnStation != null && plateOnStation.hasDish()) {
+            models.item.Dish dish = plateOnStation.getDish();
+            List<Preparable> components = dish.getComponents();
+
+            // ONLY pick up RAW ingredients (CHOPPED are immovable)
+            for (Preparable p : components) {
+                if (p instanceof Ingredient ing && ing.getState() == IngredientState.RAW) {
+                    dish.getComponents().remove(p);
+                    chef.pickUp(ing);
+                    System.out.println("[CUTTING] ✓ Removed RAW " + ing.getName() + " from plate");
+
+                    // If dish is now empty, remove it from plate
+                    if (dish.getComponents().isEmpty()) {
+                        plateOnStation.setDish(null);
+                    }
+                    return;
+                }
+            }
+
+            // If no RAW ingredients, cannot pick up
+            System.out.println("[CUTTING] CHOPPED ingredients cannot be removed from plate");
         }
 
         // Case 3: Chef picks up assembled plate
         if (!chef.hasItem() && plateOnStation != null && ingredientsOnStation.isEmpty()) {
+            // CHANGED: Cannot pick up if it has RAW ingredients
+            if (plateOnStation.hasDish() && hasRawIngredients(plateOnStation.getDish())) {
+                System.out.println("[CUTTING] ✗ Plate has RAW ingredients! Remove them first (press X).");
+                return;
+            }
+
             chef.pickUp(plateOnStation);
             plateOnStation = null;
             System.out.println("[CUTTING] Plate picked up from station");
@@ -99,7 +141,6 @@ public class CuttingStation extends Station {
             return;
         }
 
-
         // Case 6: Empty-handed chef resumes cutting ingredient on station
         if (!chef.hasItem() && ingredientBeingCut != null && !chef.isBusy()) {
             if (savedProgress > 0) {
@@ -123,10 +164,39 @@ public class CuttingStation extends Station {
     }
 
     /**
+     * NEW: Check if dish has any RAW ingredients
+     */
+    private boolean hasRawIngredients(models.item.Dish dish) {
+        for (Preparable p : dish.getComponents()) {
+            if (p instanceof Ingredient ing && ing.getState() == IngredientState.RAW) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * NEW: Get the ingredient state of a dish (returns null if empty or mixed)
+     */
+    private IngredientState getDishIngredientState(models.item.Dish dish) {
+        IngredientState state = null;
+        for (Preparable p : dish.getComponents()) {
+            if (p instanceof Ingredient ing) {
+                if (state == null) {
+                    state = ing.getState();
+                } else if (state != ing.getState()) {
+                    return null; // Mixed states
+                }
+            }
+        }
+        return state;
+    }
+
+    /**
      * Start cutting new ingredient
      */
     private void startCutting(ChefPlayer chef, Ingredient ing) {
-        isCutting = true; // SET FLAG
+        isCutting = true;
         savedProgress = 0;
         lastCutTime = System.currentTimeMillis();
 
@@ -134,10 +204,10 @@ public class CuttingStation extends Station {
 
         chef.startBusy(CurrentAction.CUTTING, CUT_DURATION_SEC, () -> {
             ing.chop();
-            ingredientsOnStation.add(ing); // Move to finished stack
+            ingredientsOnStation.add(ing);
             ingredientBeingCut = null;
             savedProgress = 0;
-            isCutting = false; // CLEAR FLAG
+            isCutting = false;
             System.out.println("[CUTTING] ✓ Cutting complete!");
         });
     }
@@ -147,7 +217,7 @@ public class CuttingStation extends Station {
      * Continue cutting with saved progress
      */
     private void continueCutting(ChefPlayer chef, Ingredient ing) {
-        isCutting = true; // SET FLAG
+        isCutting = true;
         int remainingTime = CUT_DURATION_SEC - (savedProgress / 1000);
         lastCutTime = System.currentTimeMillis();
 
@@ -158,7 +228,7 @@ public class CuttingStation extends Station {
             ingredientsOnStation.add(ing);
             ingredientBeingCut = null;
             savedProgress = 0;
-            isCutting = false; // CLEAR FLAG
+            isCutting = false;
             System.out.println("[CUTTING] ✓ Cutting complete!");
         });
     }

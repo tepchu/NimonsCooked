@@ -6,6 +6,7 @@ import models.item.*;
 import models.player.CurrentAction;
 import models.core.Position;
 import models.enums.StationType;
+import models.enums.IngredientState;
 
 public class CookingStation extends Station {
 
@@ -42,6 +43,20 @@ public class CookingStation extends Station {
 
         if (chefItem instanceof Plate plate) {
             if (plate.getDish() instanceof PizzaDish pizza && !pizza.isBaked()) {
+                // NEW: Check if pizza has any RAW ingredients OR mixed states
+                if (hasRawIngredients(pizza)) {
+                    System.out.println("[OVEN] ✗ Cannot bake pizza with RAW ingredients!");
+                    System.out.println("[OVEN] ✗ All ingredients must be CHOPPED first!");
+                    System.out.println("[OVEN] Tip: Remove RAW ingredients at assembly station (press X)");
+                    return;
+                }
+
+                if (hasMixedIngredientStates(pizza)) {
+                    System.out.println("[OVEN] ✗ Cannot bake pizza with mixed RAW and CHOPPED ingredients!");
+                    System.out.println("[OVEN] ✗ Remove RAW ingredients at assembly station first!");
+                    return;
+                }
+
                 if (oven.isEmpty()) {
                     // Place pizza in oven
                     oven.placePizza(pizza);
@@ -52,6 +67,8 @@ public class CookingStation extends Station {
                     System.out.println("[OVEN] Pizza placed in oven - now baking automatically");
                     System.out.println("[OVEN] Pizza will be ready in " + oven.getBakeTime() + " seconds");
                     return;
+                } else {
+                    System.out.println("[OVEN] Oven is already in use!");
                 }
             } else if (plate.isClean() && !plate.hasDish()) {
                 if (oven.hasPizza()) {
@@ -75,6 +92,8 @@ public class CookingStation extends Station {
                         System.out.println("[OVEN] Pizza is still cooking...");
                     }
                 }
+            } else if (plate.hasDish()) {
+                System.out.println("[OVEN] Plate already has a dish!");
             }
         } else if (!chef.hasItem() && oven.hasPizza()) {
             if (oven.isBurned()) {
@@ -83,6 +102,41 @@ public class CookingStation extends Station {
                 System.out.println("[OVEN] Need a plate to pick up the pizza!");
             }
         }
+    }
+
+    /**
+     * NEW: Check if pizza has any RAW (unchopped) ingredients
+     */
+    private boolean hasRawIngredients(PizzaDish pizza) {
+        for (Preparable p : pizza.getComponents()) {
+            if (p instanceof Ingredient ing) {
+                if (ing.getState() == IngredientState.RAW) {
+                    System.out.println("[OVEN] Found RAW ingredient: " + ing.getName());
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * NEW: Check if pizza has mixed RAW and CHOPPED ingredients
+     */
+    private boolean hasMixedIngredientStates(PizzaDish pizza) {
+        boolean hasRaw = false;
+        boolean hasChopped = false;
+
+        for (Preparable p : pizza.getComponents()) {
+            if (p instanceof Ingredient ing) {
+                if (ing.getState() == IngredientState.RAW) {
+                    hasRaw = true;
+                } else if (ing.getState() == IngredientState.CHOPPED) {
+                    hasChopped = true;
+                }
+            }
+        }
+
+        return hasRaw && hasChopped;
     }
 
     private void handleRegularCookingDevice(ChefPlayer chef) {

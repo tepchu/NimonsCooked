@@ -45,17 +45,61 @@ public class IngredientStorage extends Station {
             return;
         }
 
-        // 2. Chef taruh chopped ingredient ke station (bisa stack)
-        if (chefItem instanceof Ingredient ing && ing.getState() == IngredientState.CHOPPED) {
+        // 2. Chef places ingredient on station (RAW or CHOPPED, but cannot mix)
+        if (chefItem instanceof Ingredient ing &&
+                (ing.getState() == IngredientState.RAW || ing.getState() == IngredientState.CHOPPED)) {
+
+            // Check if adding this ingredient would mix states
+            if (!ingredientsOnStation.isEmpty()) {
+                IngredientState existingState = ingredientsOnStation.get(0).getState();
+                if (existingState != ing.getState()) {
+                    System.out.println("[INGREDIENT_STORAGE] ✗ Cannot mix RAW and CHOPPED ingredients!");
+                    return;
+                }
+            }
+
+            // Check if plate has dish with different state ingredients
+            if (plateOnStation != null && plateOnStation.hasDish()) {
+                IngredientState plateState = getDishIngredientState(plateOnStation.getDish());
+                if (plateState != null && plateState != ing.getState()) {
+                    System.out.println("[INGREDIENT_STORAGE] ✗ Cannot mix RAW and CHOPPED ingredients!");
+                    return;
+                }
+            }
+
             chef.drop();
             ingredientsOnStation.add(ing);
-            System.out.println("[INGREDIENT_STORAGE] ✓ Added " + ing.getName() + " to station. Total: " + ingredientsOnStation.size());
+            System.out.println("[INGREDIENT_STORAGE] ✓ Added " + ing.getName() + " (" + ing.getState() + ") to station. Total: " + ingredientsOnStation.size());
 
-            // Auto-assemble jika ada plate
+            // Auto-assemble if plate exists
             if (plateOnStation != null) {
                 assembleAllIngredients();
             }
             return;
+        }
+
+        // NEW: 2.5 Chef picks up ONLY RAW ingredients from plate
+        if (!chef.hasItem() && plateOnStation != null && plateOnStation.hasDish()) {
+            Dish dish = plateOnStation.getDish();
+            List<Preparable> components = dish.getComponents();
+
+            // ONLY pick up RAW ingredients (CHOPPED are immovable)
+            for (Preparable p : components) {
+                if (p instanceof Ingredient ing && ing.getState() == IngredientState.RAW) {
+                    dish.getComponents().remove(p);
+                    chef.pickUp(ing);
+                    System.out.println("[INGREDIENT_STORAGE] ✓ Removed RAW " + ing.getName() + " from plate");
+
+                    // If dish is now empty, remove it from plate
+                    if (dish.getComponents().isEmpty()) {
+                        plateOnStation.setDish(null);
+                    }
+                    return;
+                }
+            }
+
+            // If no RAW ingredients, cannot pick up
+            System.out.println("[INGREDIENT_STORAGE] CHOPPED ingredients cannot be removed from plate");
         }
 
         // 3. Chef punya plate dengan dish, mau tambah ingredients dari station
@@ -124,6 +168,35 @@ public class IngredientStorage extends Station {
         System.out.println("[INGREDIENT_STORAGE] ✗ No valid interaction");
     }
 
+    /**
+     * NEW: Check if dish has any RAW ingredients
+     */
+    private boolean hasRawIngredients(Dish dish) {
+        for (Preparable p : dish.getComponents()) {
+            if (p instanceof Ingredient ing && ing.getState() == IngredientState.RAW) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * NEW: Get the ingredient state of a dish (returns null if empty or mixed)
+     */
+    private IngredientState getDishIngredientState(Dish dish) {
+        IngredientState state = null;
+        for (Preparable p : dish.getComponents()) {
+            if (p instanceof Ingredient ing) {
+                if (state == null) {
+                    state = ing.getState();
+                } else if (state != ing.getState()) {
+                    return null; // Mixed states
+                }
+            }
+        }
+        return state;
+    }
+    
     private void assembleAllIngredients() {
         if (plateOnStation == null || ingredientsOnStation.isEmpty()) {
             return;
