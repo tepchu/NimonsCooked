@@ -1234,12 +1234,17 @@ public class GameView {
                 return "cooked_chicken";
             }
 
-            if (name.contains("cheese") && ing.getState() == IngredientState.RAW) return "cheese_raw";
+            if (name.contains("cheese") && ing.getState() == IngredientState.RAW) return "cheese";
+            if (name.contains("cheese")) return "cheese";
             if (name.contains("cheese") && ing.getState() == IngredientState.CHOPPED) return "cheese_chopped";
-            if (name.contains("chicken") && ing.getState() == IngredientState.RAW) return "chicken_raw";
-            if (name.contains("dough") && ing.getState() == IngredientState.RAW) return "dough_raw";
-            if (name.contains("sausage") && ing.getState() == IngredientState.RAW) return "sausage_raw";
-            if (name.contains("tomato") && ing.getState() == IngredientState.RAW) return "tomato_raw";
+            if (name.contains("chicken") && ing.getState() == IngredientState.RAW) return "chicken";
+            if (name.contains("chicken")) return "chicken";
+            if (name.contains("dough") && ing.getState() == IngredientState.RAW) return "dough";
+            if (name.contains("dough")) return "dough";
+            if (name.contains("sausage") && ing.getState() == IngredientState.RAW) return "sausage";
+            if (name.contains("sausage")) return "sausage";
+            if (name.contains("tomato") && ing.getState() == IngredientState.RAW) return "tomato";
+            if (name.contains("tomato")) return "tomato";
 
         }
         return null;

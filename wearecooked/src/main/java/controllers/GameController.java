@@ -79,17 +79,17 @@ public class GameController {
             case A -> command = new MoveCommand(chef, Direction.LEFT, map, chefs);
             case D -> command = new MoveCommand(chef, Direction.RIGHT, map, chefs);
             case C -> {
-                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                if (!chef.isBusy() || !chef.isMoving()) {  // Keep busy check for non-movement
                     command = new PickupDropCommand(chef, map, itemsOnFloor);
                 }
             }
             case X -> {
-                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                if (!chef.isBusy() || !chef.isMoving()) {  // Keep busy check for non-movement
                     command = new InteractCommand(chef, map, itemsOnFloor);
                 }
             }
             case SPACE -> {
-                if (!chef.isBusy() || !chef.isMoving()) {  // ← Keep busy check for non-movement
+                if (!chef.isBusy() || !chef.isMoving()) {  // Keep busy check for non-movement
                     command = new ThrowCommand(chef, map, chefs, itemsOnFloor);
                 }
             }
